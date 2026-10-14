@@ -213,6 +213,8 @@ input[type=search] { flex: 1; }
 /* ===== 설정: 회사 위치를 정확히 맞추려면 여기 좌표를 바꾸세요 ===== */
 const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소 (삼성동 대화빌딩)", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
+/* 데이터 갱신은 자동 실행 없이, 필요할 때 이 화면에서 Run workflow (저장소 관리자만 가능) */
+const UPDATE_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/actions/workflows/update-data.yml";
 
 /* ---------- 유틸 ---------- */
 const $ = (s) => document.querySelector(s);
@@ -257,6 +259,32 @@ function floorOf(d) {
 /* 같은 건물 = 좌표가 같음 (원본 좌표가 건물 단위라 층만 다르면 완전히 겹친다) */
 const placeKey = (d) => `${d.lat.toFixed(5)},${d.lng.toFixed(5)}`;
 const bldAddr = (d) => shortAddr(d.road || d.jibun).replace(/\s*\(.*$/, "");
+const fullAddr = (d) => (d.road || d.jibun || "-").replace(/^서울특별시\s*/, "");
+
+/* 시설 규모(시설총규모, 주방 포함 ㎡) → 직관적 구분.
+   강남구 영업 중 일반음식점 분포: 중간값 85㎡, 하위 28% 50㎡ 미만, 상위 23% 150㎡ 이상, 상위 6% 300㎡ 이상.
+   주방·화장실 포함 대략 3㎡당 1석으로 보면 소형 ~15석, 중형 15~50석, 대형 50~100석, 초대형 100석 이상. */
+const SIZES = [
+  { max: 50, label: "소형", hint: "약 15석 이하, 2~4명 식사" },
+  { max: 150, label: "중형", hint: "약 15~50석" },
+  { max: 300, label: "대형", hint: "약 50~100석, 팀 회식 가능" },
+  { max: Infinity, label: "초대형", hint: "약 100석 이상, 단체 회식·연회" },
+];
+function sizeOf(d) {
+  const a = +d.area || 0;
+  if (a <= 0) return null;
+  const s = SIZES.find((x) => a < x.max);
+  return { ...s, text: `${s.label} (${Math.round(a)}㎡)` };
+}
+/* 전화번호: 원본에 "34113402"처럼 지역번호 없이 들어간 곳이 있어 02를 붙여 보기 좋게 */
+function fmtTel(t) {
+  let n = String(t || "").replace(/[^0-9]/g, "");
+  if (!n) return "";
+  if (/^1[5-9]\d{6}$/.test(n)) return n.replace(/^(\d{4})(\d{4})$/, "$1-$2");   // 1588-0000 같은 대표번호
+  if (!n.startsWith("0") && (n.length === 7 || n.length === 8)) n = "02" + n;
+  if (n.startsWith("02")) return n.replace(/^(02)(\d{3,4})(\d{4})$/, "$1-$2-$3");
+  return n.replace(/^(0\d{2})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+}
 
 /* ---------- 상태 분류 ---------- */
 function statusClass(s) {
@@ -327,7 +355,7 @@ async function loadRemote() {
     const res = await fetch(`${DATA_URL}?v=${Date.now().toString().slice(0, -5)}`, { cache: "no-cache" });
     if (!res.ok) throw new Error(res.status);
     const j = await res.json();
-    META = { updated: j.updated, source: j.source, services: j.services };
+    META = { updated: j.updated, sourceUpdated: j.source_updated, source: j.source, services: j.services };
     DATA = fromRows(j.fields, j.rows);
     if (!DATA.length) throw new Error("empty");
     start();
@@ -363,7 +391,7 @@ async function loadFile(file) {
   try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch { text = new TextDecoder("euc-kr").decode(buf); }
   text = text.replace(/^﻿/, "");
   if (/\.json$/i.test(file.name) || text.trim().startsWith("{")) {
-    const j = JSON.parse(text); META = { updated: j.updated, source: j.source, services: j.services }; DATA = fromRows(j.fields, j.rows);
+    const j = JSON.parse(text); META = { updated: j.updated, sourceUpdated: j.source_updated, source: j.source, services: j.services }; DATA = fromRows(j.fields, j.rows);
     return start();
   }
   const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
@@ -404,8 +432,12 @@ function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office
 
 function start() {
   $("#empty").hidden = true; $("#filters").hidden = false; $("#summary").hidden = false;
-  const up = META.updated ? String(META.updated).replace("T", " ").replace("+09:00", "") : "-";
-  $("#stamp").textContent = `기준 ${up} · 일반음식점 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳 영업 중`;
+  const got = META.updated ? String(META.updated).slice(0, 10) : "";
+  const src = META.sourceUpdated || got || "-";
+  const age = src && src !== "-" ? Math.floor((Date.now() - new Date(src + "T00:00:00+09:00")) / 864e5) : 0;
+  $("#stamp").innerHTML = `원본 기준 ${esc(src)}${age >= 7 ? ` <span style="color:var(--warn)">(${age}일 전)</span>` : ""}`
+    + ` · 일반음식점 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳 영업 중`
+    + ` · <a href="${UPDATE_URL}" target="_blank" rel="noopener" title="${got ? `마지막으로 받은 날 ${got}. ` : ""}관리자: Run workflow를 누르면 최신 데이터로 갱신">업데이트</a>`;
   computeDist();
   byPlace = new Map();
   for (const d of DATA) { const k = placeKey(d); if (!byPlace.has(k)) byPlace.set(k, []); byPlace.get(k).push(d); }
@@ -493,7 +525,7 @@ function render() {
     const fl = floorOf(d).label, same = groups.get(placeKey(d)).n;
     return `<div class="item${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}" tabindex="0" role="button">
       <div class="nm">${esc(d.name)}</div><div class="dist">${fmtDist(d.dist)}</div>
-      <div class="meta"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${colorOf(d.type)}"></span>${esc(d.type)}
+      <div class="meta"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${colorOf(d.type)}"></span>${esc(d.type)}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
         ${d.sc !== "open" ? `<span class="pill ${st.pill}">${esc(st.label)}</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
@@ -534,6 +566,14 @@ function verdictHtml(d) {
   if (isCaution(d)) return `<span class="verdict warn">⚠ 주점성 업태 · 과제비 사용 주의</span>`;
   return `<span class="verdict">일반음식점 · 영업 중</span>`;
 }
+function telHtml(d) {
+  const t = fmtTel(d.tel);
+  return t ? `<a href="tel:${t.replace(/-/g, "")}">${t}</a>` : `<span class="hint">미등록 · 지도 앱에서 확인</span>`;
+}
+function sizeHtml(d) {
+  const z = sizeOf(d);
+  return z ? `<span title="${z.hint}">${z.text}</span> <span class="hint">${z.hint}</span>` : `<span class="hint">정보 없음</span>`;
+}
 function reviewsHtml(d, cls) {
   return `<div class="reviews"><span class="rl">리뷰·메뉴·영업시간</span>${mapLinks(d, cls)}</div>`;
 }
@@ -546,7 +586,9 @@ function popupHtml(rows) {
       ${verdictHtml(d)}
       <dl>
         <dt>업태</dt><dd>${esc(d.type)}</dd>
-        <dt>위치</dt><dd>${esc(bldAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}</dd>
+        <dt>규모</dt><dd>${sizeHtml(d)}</dd>
+        <dt>전화</dt><dd class="mono">${telHtml(d)}</dd>
+        <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}</dd>
         <dt>거리</dt><dd>${fmtDist(d.dist)} · 도보 약 ${walkMin(d.dist)}분</dd>
       </dl>
       ${reviewsHtml(d, "btn")}</div>`;
@@ -559,6 +601,7 @@ function popupHtml(rows) {
       const fl = floorOf(d).label;
       return `<div class="shop${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}">
         <div class="top"><b>${esc(d.name)}</b>${fl ? `<span class="floor">${fl}</span>` : ""}<span class="hint">${esc(d.type)}</span></div>
+        <div class="hint">${sizeOf(d) ? `<span title="${sizeOf(d).hint}">${sizeOf(d).text}</span> · ` : ""}${fmtTel(d.tel) ? `<a href="tel:${fmtTel(d.tel).replace(/-/g, "")}">${fmtTel(d.tel)}</a>` : "전화 미등록"}</div>
         ${d.sc === "open" && !isCaution(d) ? "" : `<div>${verdictHtml(d)}</div>`}
         ${reviewsHtml(d, "ext-a")}</div>`;
     }).join("")}</div></div>`;

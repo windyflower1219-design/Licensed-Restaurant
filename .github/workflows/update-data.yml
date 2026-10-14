@@ -1,10 +1,8 @@
 name: 일반음식점 데이터 갱신
 
+# 자동 예약 실행 없음: 필요할 때 Actions 탭 → Run workflow 로만 갱신한다.
 on:
-  schedule:
-    # 매일 06:30 KST (= 21:30 UTC). 서울시 데이터가 새벽에 갱신된 뒤 받아온다.
-    - cron: "30 21 * * *"
-  workflow_dispatch: {}   # Actions 탭에서 수동 실행 가능
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -29,6 +27,7 @@ jobs:
 
       - name: 데이터 받기
         env:
+          # 기본은 CSV 내려받기(키 불필요). 실패하면 이 키로 Open API를 대신 쓴다.
           SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
           SEOUL_SERVICES: ${{ vars.SEOUL_SERVICES || 'LOCALDATA_072404_GN' }}
         run: python scripts/fetch_data.py

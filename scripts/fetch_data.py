@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-서울 열린데이터광장 '일반음식점 인허가 정보' Open API를 받아
-지도 페이지용 data/restaurants.json 으로 변환한다.
+서울 열린데이터광장 '일반음식점 인허가 정보'를 받아 지도 페이지용 data/restaurants.json 으로 변환한다.
+
+받는 방법 (위에서부터 시도)
+  1. CSV 내려받기: 데이터셋 페이지의 「내려받기(CSV)」 버튼과 같은 요청. 인증키 불필요, 한 번에 전체(약 5초).
+  2. Open API: CSV가 실패하고 SEOUL_API_KEY가 있을 때만. 1,000건씩 여러 번 받아 합친다(약 10분).
 
 환경변수
-  SEOUL_API_KEY   (필수) 서울 열린데이터광장 일반 인증키
-  SEOUL_SERVICES  (선택) 쉼표로 구분한 서비스명. 기본: LOCALDATA_072404_GN (강남구)
-                  예) LOCALDATA_072404_GN,LOCALDATA_072404_SC  (강남+서초)
+  SEOUL_CSV       (선택) 데이터셋ID:개방자치단체코드, 쉼표로 여러 개. 기본: OA-18674:3220000 (강남구)
+  SEOUL_API_KEY   (선택) CSV 실패 시 쓰는 서울 열린데이터광장 일반 인증키
+  SEOUL_SERVICES  (선택) API 서비스명. 기본: LOCALDATA_072404_GN (강남구)
   KEEP_CLOSED_DAYS (선택) 최근 N일 안에 폐업한 곳도 남김(폐업 확인용). 기본 365
 
 실행
   pip install pyproj
-  SEOUL_API_KEY=xxxx python scripts/fetch_data.py
-  python scripts/fetch_data.py --csv 받은파일.csv   # 열린데이터광장에서 내려받은 CSV로 만들기(키 불필요)
+  python scripts/fetch_data.py                      # CSV 자동 내려받기 (실패 시 API)
+  python scripts/fetch_data.py --csv 받은파일.csv   # 직접 내려받은 CSV로 만들기
 """
 import csv
 import datetime as dt
@@ -22,6 +25,7 @@ import re
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -30,6 +34,8 @@ from pyproj import Transformer
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "restaurants.json"
 PAGE = 1000  # 서울 Open API 1회 최대 요청 건수
+# 데이터셋 페이지 「내려받기(CSV)」 버튼이 보내는 요청 (공식 API는 아니라 바뀌면 API로 넘어간다)
+CSV_URL = "https://datafile.seoul.go.kr/bigfile/iot/sheet/csv/download.do"
 
 # LOCALDATA 좌표는 중부원점(Bessel) EPSG:5174. 국내 실무에서 쓰는 towgs84 보정값 포함.
 EPSG5174 = ("+proj=tmerc +lat_0=38 +lon_0=127.0028902777778 +k=1 +x_0=200000 +y_0=500000 "
@@ -61,6 +67,7 @@ ALIASES = {
     "x": ["X", "좌표정보(X)", "좌표정보X(EPSG5174)", "좌표정보(x)"],
     "y": ["Y", "좌표정보(Y)", "좌표정보Y(EPSG5174)", "좌표정보(y)"],
     "modified": ["LASTMODTS", "최종수정시점", "최종수정일자", "데이터갱신일자", "UPDATEDT"],
+    "source_dt": ["UPDATEDT", "데이터갱신일자"],
 }
 
 
@@ -178,31 +185,72 @@ def convert(raw_rows, keep_closed_days):
     return out, no_xy
 
 
-def read_csv(path):
+def parse_csv(data, name):
     """열린데이터광장 CSV(보통 CP949, 가끔 UTF-8). 깨진 바이트가 한두 개 섞여 있어 replace로 읽는다."""
-    data = Path(path).read_bytes()
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
         text = data.decode("cp949", errors="replace")
     rows = list(csv.DictReader(text.splitlines()))
-    print(f"[CSV] {Path(path).name}: {len(rows):,}건", flush=True)
+    print(f"[CSV] {name}: {len(rows):,}건", flush=True)
     return rows
+
+
+def read_csv(path):
+    return parse_csv(Path(path).read_bytes(), Path(path).name)
+
+
+def download_csv(inf_id, org_code, retries=3):
+    form = {
+        "srvType": "S", "infId": inf_id, "serviceKind": "1", "pageNo": "1", "gridTotalCnt": "",
+        "ssUserId": "SAMPLE_VIEW", "strWhere": f" AND OPNSFTEAMCODE = {org_code}", "strOrderby": "",
+        "filterCol": "필터선택", "txtFilter": "",
+    }
+    req = urllib.request.Request(CSV_URL, data=urllib.parse.urlencode(form).encode(), method="POST")
+    last = None
+    for i in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                data = r.read()
+            rows = parse_csv(data, f"{inf_id} ({len(data)/1e6:.1f} MB)")
+            head = rows[0].keys() if rows else []
+            if not {"관리번호", "사업장명"} <= set(head) or len(rows) < 1000:
+                raise ValueError(f"CSV 형식이 예상과 다름 (열 {list(head)[:5]}…, {len(rows)}건)")
+            ids = {r["관리번호"] for r in rows}
+            note(f"CSV {inf_id}: {len(rows):,}건, 고유 관리번호 {len(ids):,}")
+            return rows
+        except (urllib.error.URLError, TimeoutError, ValueError) as e:
+            last = e
+            time.sleep(5 * (i + 1))
+    raise RuntimeError(f"CSV 내려받기 실패: {last}")
+
+
+def source_date(raw):
+    """원본 데이터 기준일 = 행들의 데이터갱신일자 중 가장 최근"""
+    return max((ymd(pick(r, "source_dt")) for r in raw), default="")
 
 
 def main():
     keep_days = int(os.environ.get("KEEP_CLOSED_DAYS", "365"))
     if len(sys.argv) == 3 and sys.argv[1] == "--csv":
-        services = ["CSV"]
+        services = ["CSV(직접 업로드)"]
         raw = read_csv(sys.argv[2])
     else:
-        key = os.environ.get("SEOUL_API_KEY", "").strip()
-        if not key:
-            sys.exit("SEOUL_API_KEY 환경변수가 없습니다. (CSV로 만들려면 --csv 파일경로)")
-        services = [s.strip() for s in os.environ.get("SEOUL_SERVICES", "LOCALDATA_072404_GN").split(",") if s.strip()]
-        raw = []
-        for svc in services:
-            raw.extend(fetch_service(key, svc))
+        sets = [x.strip().split(":") for x in os.environ.get("SEOUL_CSV", "OA-18674:3220000").split(",") if x.strip()]
+        try:
+            raw = []
+            for inf_id, org in sets:
+                raw.extend(download_csv(inf_id, org))
+            services = [f"CSV {inf_id}" for inf_id, _ in sets]
+        except RuntimeError as e:
+            key = os.environ.get("SEOUL_API_KEY", "").strip()
+            if not key:
+                sys.exit(f"{e} — SEOUL_API_KEY가 없어 API로 대신 받을 수도 없습니다.")
+            note(f"{e} → Open API로 대신 받습니다.")
+            services = [s.strip() for s in os.environ.get("SEOUL_SERVICES", "LOCALDATA_072404_GN").split(",") if s.strip()]
+            raw = []
+            for svc in services:
+                raw.extend(fetch_service(key, svc))
     rows, no_xy = convert(raw, keep_days)
     n_open = sum(1 for r in rows if "폐업" not in r[3])
     note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 좌표 없음/범위 밖 {no_xy:,}건 제외")
@@ -216,8 +264,11 @@ def main():
         except json.JSONDecodeError:
             pass
 
+    src = source_date(raw)
+    note(f"원본 데이터 기준일: {src or '알 수 없음'}")
     payload = {
         "updated": dt.datetime.now(KST).isoformat(timespec="minutes"),
+        "source_updated": src,
         "services": services,
         "source": "서울 열린데이터광장 일반음식점 인허가 정보 (공공누리 제1유형)",
         "fields": FIELDS,
