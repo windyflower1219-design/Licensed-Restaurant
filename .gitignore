@@ -1,0 +1,9 @@
+# 안드로이드 빌드 산출물·서명 키는 올리지 않는다
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/build.log
+*.p12
+*.jks
+*.keystore

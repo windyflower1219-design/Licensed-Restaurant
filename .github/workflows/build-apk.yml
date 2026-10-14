@@ -1,0 +1,84 @@
+name: 안드로이드 앱(APK) 빌드
+
+# 앱 껍데기(android/)가 바뀔 때만 새로 빌드해 '최신 릴리스'로 올린다.
+# 화면·데이터 변경은 앱이 사이트를 그대로 읽어서 자동 반영되므로 다시 빌드할 필요가 없다.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      # 서명 키: Secrets에 있으면 그걸 쓴다(업데이트 설치 가능).
+      # 없으면 임시 키로 빌드한다 — 이 경우 다음 버전은 지우고 다시 설치해야 한다.
+      - name: 서명 키 준비
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ] && [ -n "$KS_PW" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+            echo "KEYSTORE_PASSWORD=$KS_PW" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD Secret이 없어 임시 키로 서명합니다. 다음 버전은 기존 앱을 지우고 설치해야 합니다."
+            PW=$(openssl rand -hex 16)
+            keytool -genkeypair -storetype PKCS12 -keystore "$RUNNER_TEMP/release.p12" -alias babdojang \
+              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PW" -keypass "$PW" -dname "CN=babdojang"
+            echo "KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+          fi
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+
+      - name: APK 빌드
+        working-directory: android
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+
+      # 빌드 로그는 로그인해야 보이므로, 실패 원인을 실행 화면 Annotations에도 남긴다
+      - name: 실패 원인 요약
+        if: failure()
+        working-directory: android
+        run: |
+          grep -E "error:|e: |What went wrong|Could not|FAILURE|Exception|> " build.log | grep -v "^\s*at " | head -25 | while IFS= read -r line; do
+            echo "::error::${line:0:300}"
+          done
+
+      - name: 파일 이름 정리
+        run: cp android/app/build/outputs/apk/release/app-release.apk babdojang.apk
+
+      - name: 최신 릴리스로 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-v1.0.${{ github.run_number }}
+          name: 밥도장 앱 1.0.${{ github.run_number }}
+          body: |
+            휴대폰에서 아래 babdojang.apk를 눌러 설치하세요.
+            화면·데이터는 사이트에서 바로 읽으므로 웹을 고치면 앱에도 자동 반영됩니다.
+          files: babdojang.apk
+          make_latest: true

@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// CI가 넘겨주는 빌드 번호. 사이트는 이 번호와 최신 릴리스 번호를 비교해 업데이트 안내를 띄운다.
+def buildNo = (System.getenv('VERSION_CODE') ?: '1') as int
+
+android {
+    namespace 'com.windyflower.babdojang'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.windyflower.babdojang'
+        minSdk 26
+        targetSdk 34
+        versionCode buildNo
+        versionName "1.0.${buildNo}"
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('KEYSTORE_PATH')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS') ?: 'babdojang'
+                keyPassword System.getenv('KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false   // 웹뷰 앱이라 lint 경고(자바스크립트 허용 등)로 빌드가 멈추지 않게
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
