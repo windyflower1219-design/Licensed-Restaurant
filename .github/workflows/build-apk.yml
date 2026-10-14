@@ -72,6 +72,13 @@ jobs:
       - name: 파일 이름 정리
         run: cp android/app/build/outputs/apk/release/app-release.apk rndinner.apk
 
+      # 어떤 키로 서명됐는지 실행 화면에 남긴다(정식 키면 매번 같은 지문)
+      - name: 서명 확인
+        run: |
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          FP=$("$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs rndinner.apk | grep -m1 "SHA-256 digest" | awk '{print $NF}')
+          echo "::notice::APK 서명 인증서 SHA-256: $FP"
+
       - name: 최신 릴리스로 올리기
         uses: softprops/action-gh-release@v2
         with:
