@@ -147,7 +147,8 @@ input[type=search] { flex: 1; }
 .pop .bld { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
 .pop .shops { max-height: 280px; overflow-y: auto; margin: 0 -14px; border-top: 1px solid var(--line); }
 .pop .shop { padding: 8px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
-.pop .shop.active { background: var(--chip); }
+.pop .shop { cursor: pointer; transition: background .12s; }   /* 누르면 그 가게만 보기 */
+.pop .shop:hover, .pop .shop.active { background: var(--chip); }
 .pop .shop .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .pop .shop b { font-size: 13.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 2000; }
