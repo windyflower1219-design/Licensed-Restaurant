@@ -95,4 +95,12 @@ python scripts/fetch_data.py
 python -m http.server 8000   # http://localhost:8000 접속
 ```
 
+## 라이선스
+
+- **코드**: Apache License 2.0 (`LICENSE`)
+- **`data/` 폴더의 데이터는 각 출처의 라이선스를 따릅니다.**
+  - 식당 정보: 서울 열린데이터광장 일반음식점 인허가 정보 — 공공누리 제1유형(출처표시)
+  - 원본에 좌표가 없어 주소로 찾은 위치(`data/geocode_cache.json`, `data/restaurants.json`의 `geo` 값이 있는 행): OpenStreetMap Nominatim 검색 결과 — © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/)
+- 배경지도: © OpenStreetMap contributors · 지도 라이브러리: Leaflet (BSD-2-Clause)
+
 데이터 출처: 서울 열린데이터광장 일반음식점 인허가 정보 (공공누리 제1유형) · 지도·주소 검색: © OpenStreetMap contributors
