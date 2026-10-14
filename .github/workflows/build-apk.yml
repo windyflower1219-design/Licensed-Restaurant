@@ -48,11 +48,15 @@ jobs:
           else
             echo "::warning::ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD Secret이 없어 임시 키로 서명합니다. 다음 버전은 기존 앱을 지우고 설치해야 합니다."
             PW=$(openssl rand -hex 16)
-            keytool -genkeypair -storetype PKCS12 -keystore "$RUNNER_TEMP/release.p12" -alias babdojang \
-              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PW" -keypass "$PW" -dname "CN=babdojang"
+            keytool -genkeypair -storetype PKCS12 -keystore "$RUNNER_TEMP/release.p12" -alias rndinner \
+              -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PW" -keypass "$PW" -dname "CN=R&Dinner"
             echo "KEYSTORE_PASSWORD=$PW" >> "$GITHUB_ENV"
+            KS_PW="$PW"
           fi
           echo "KEYSTORE_PATH=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+          # 키 안의 별칭은 키를 만들 때 정해지므로 코드에 적지 않고 키에서 읽는다
+          ALIAS=$(keytool -list -storetype PKCS12 -keystore "$RUNNER_TEMP/release.p12" -storepass "$KS_PW" | grep -m1 PrivateKeyEntry | cut -d, -f1)
+          echo "KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
 
       - name: APK 빌드
         working-directory: android

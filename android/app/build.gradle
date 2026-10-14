@@ -23,7 +23,7 @@ android {
             if (ks) {
                 storeFile file(ks)
                 storePassword System.getenv('KEYSTORE_PASSWORD')
-                keyAlias System.getenv('KEY_ALIAS') ?: 'babdojang'
+                keyAlias System.getenv('KEY_ALIAS')   // CI가 키에서 읽어 넘겨준다
                 keyPassword System.getenv('KEYSTORE_PASSWORD')
             }
         }
