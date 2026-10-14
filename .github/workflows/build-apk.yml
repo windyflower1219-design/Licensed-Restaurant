@@ -93,3 +93,15 @@ jobs:
             화면·데이터는 사이트에서 바로 읽으므로 웹을 고치면 앱에도 자동 반영됩니다.
           files: rndinner.apk
           make_latest: true
+
+      # 예전 버전(임시 키로 서명된 것 포함)을 받아 설치하는 일이 없게, 방금 올린 것만 남기고 지운다
+      - name: 이전 릴리스 정리
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: app-v1.0.${{ github.run_number }}
+        run: |
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' | while read -r tag; do
+            [ "$tag" = "$KEEP" ] && continue
+            echo "삭제: $tag"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+          done
