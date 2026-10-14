@@ -1,4 +1,4 @@
-package com.windyflower.safedinner;
+package com.windyflower.rndinner;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -17,7 +17,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * SafeDinner: 사이트(GitHub Pages)를 그대로 띄우는 앱.
+ * R&Dinner: 사이트(GitHub Pages)를 그대로 띄우는 앱.
  * 화면·데이터는 매번 사이트에서 읽으므로, 깃에 올린 변경은 앱을 다시 설치하지 않아도 반영된다.
  */
 public class MainActivity extends Activity {
@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         // 사이트가 앱인지 알아보고(선택 화면 숨김, 공유·뒤로가기 연동) 앱 버전을 비교할 수 있게
-        s.setUserAgentString(s.getUserAgentString() + " SafeDinnerApp/" + versionCode());
+        s.setUserAgentString(s.getUserAgentString() + " RnDinnerApp/" + versionCode());
 
         web.addJavascriptInterface(new Bridge(), "Android");
         web.setWebViewClient(new WebViewClient() {

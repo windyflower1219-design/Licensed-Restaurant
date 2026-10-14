@@ -70,15 +70,15 @@ jobs:
           done
 
       - name: 파일 이름 정리
-        run: cp android/app/build/outputs/apk/release/app-release.apk safedinner.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk rndinner.apk
 
       - name: 최신 릴리스로 올리기
         uses: softprops/action-gh-release@v2
         with:
           tag_name: app-v1.0.${{ github.run_number }}
-          name: SafeDinner 앱 1.0.${{ github.run_number }}
+          name: R&Dinner 앱 1.0.${{ github.run_number }}
           body: |
-            휴대폰에서 아래 safedinner.apk를 눌러 설치하세요.
+            휴대폰에서 아래 rndinner.apk를 눌러 설치하세요.
             화면·데이터는 사이트에서 바로 읽으므로 웹을 고치면 앱에도 자동 반영됩니다.
-          files: safedinner.apk
+          files: rndinner.apk
           make_latest: true
