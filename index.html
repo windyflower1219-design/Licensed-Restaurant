@@ -477,10 +477,12 @@ function popupHtml(d) {
 
 /* 외부 지도에서 같은 가게 검색: 상호 + 구·동(도로명) 앞부분으로 검색해 동명 가게를 줄인다 */
 function mapQuery(d) { return `${d.name} ${shortAddr(d.road || d.jibun).split(" ").slice(0, 3).join(" ")}`; }
+/* 카카오맵은 건물번호까지 붙은 주소가 있으면 주소 검색으로 바뀐다 → 상호 + 도로명(또는 동)만 */
+function kakaoQuery(d) { return `${d.name} ${shortAddr(d.road || d.jibun).split(" ")[1] || ""}`.trim(); }
 function mapLinks(d, cls) {
   const q = encodeURIComponent(mapQuery(d));
   return [
-    ["카카오맵", `https://map.kakao.com/?q=${q}`],
+    ["카카오맵", `https://map.kakao.com/?q=${encodeURIComponent(kakaoQuery(d))}`],
     ["네이버지도", `https://map.naver.com/p/search/${q}`],
     ["구글지도", `https://www.google.com/maps/search/?api=1&query=${q}`],
   ].map(([n, u]) => `<a class="${cls}" href="${u}" target="_blank" rel="noopener" title="${n}에서 ${esc(d.name)} 검색">${n}</a>`).join("");
