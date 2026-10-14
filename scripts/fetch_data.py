@@ -11,6 +11,8 @@
   SEOUL_API_KEY   (선택) CSV 실패 시 쓰는 서울 열린데이터광장 일반 인증키
   SEOUL_SERVICES  (선택) API 서비스명. 기본: LOCALDATA_072404_GN (강남구)
   KEEP_CLOSED_DAYS (선택) 최근 N일 안에 폐업한 곳도 남김(폐업 확인용). 기본 365
+  GEOCODE_MINUTES (선택) 좌표 없는 곳을 주소로 찾는 데 쓸 최대 시간(분). 0이면 안 찾음. 기본 40
+                  결과는 data/geocode_cache.json 에 쌓여 다음부터는 새 주소만 조회한다.
 
 실행
   pip install pyproj
@@ -33,6 +35,9 @@ from pyproj import Transformer
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "restaurants.json"
+GEO_CACHE = ROOT / "data" / "geocode_cache.json"
+NOMINATIM = "https://nominatim.openstreetmap.org/search"
+GEO_UA = "restaurant-map (https://github.com/windyflower1219-design/Licensed-Restaurant)"
 PAGE = 1000  # 서울 Open API 1회 최대 요청 건수
 # 데이터셋 페이지 「내려받기(CSV)」 버튼이 보내는 요청 (공식 API는 아니라 바뀌면 API로 넘어간다)
 CSV_URL = "https://datafile.seoul.go.kr/bigfile/iot/sheet/csv/download.do"
@@ -46,8 +51,9 @@ TO_WGS84 = Transformer.from_crs(EPSG5174, "EPSG:4326", always_xy=True)
 KST = dt.timezone(dt.timedelta(hours=9))
 
 # 출력 컬럼 (페이지와 약속된 순서)
+# geo: "" = 원본 좌표, "addr" = 주소로 찾은 좌표(건물 일치), "road" = 도로까지만 일치(대략 위치)
 FIELDS = ["id", "name", "type", "status", "detail", "road", "jibun", "tel",
-          "permit", "closed", "hygiene", "area", "lat", "lng", "modified"]
+          "permit", "closed", "hygiene", "area", "lat", "lng", "modified", "geo"]
 
 # 서울 API(영문 대문자)와 CSV(한글) 컬럼명을 모두 받아들인다.
 ALIASES = {
@@ -148,9 +154,62 @@ def fetch_service(key, service, max_pass=8):
     return list(by_id.values())
 
 
-def convert(raw_rows, keep_closed_days):
+def geo_queries(r):
+    """좌표 없는 곳의 주소 검색어: 도로명(건물번호까지) → 지번(번지까지)"""
+    road = re.sub(r"\s*\(.*$", "", re.sub(r",.*$", "", pick(r, "road"))).strip()
+    m = re.match(r"(서울특별시 \S+구 \S+동 (?:산)?\d+(?:-\d+)?)", pick(r, "jibun"))
+    return [q for q in (road, m and m.group(1)) if q]
+
+
+def nominatim(q):
+    """OpenStreetMap 주소 검색. 사용 규칙(초당 1회, 결과 캐시)을 지킨다.
+    결과에 건물번호가 그대로 있으면 정확("addr"), 도로만 맞으면 대략("road"), 그 밖(동 단위 등)은 버림."""
+    url = NOMINATIM + "?" + urllib.parse.urlencode({"q": q, "format": "json", "limit": 1, "countrycodes": "kr"})
+    req = urllib.request.Request(url, headers={"User-Agent": GEO_UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        j = json.loads(r.read())
+    time.sleep(1.1)
+    if not j:
+        return None
+    g, num = j[0], q.split()[-1]
+    parts = [x.strip() for x in g.get("display_name", "").split(",")]
+    if num in parts:
+        prec = "addr"
+    elif g.get("addresstype") == "road" or g.get("class") == "highway":
+        prec = "road"
+    else:
+        return None
+    return [round(float(g["lat"]), 6), round(float(g["lon"]), 6), prec]
+
+
+def geocode(rows_by_q, budget_min):
+    """좌표 없는 곳들을 주소로 찾는다. data/geocode_cache.json 에 남겨 다음부터는 새 주소만 조회."""
+    try:
+        cache = json.loads(GEO_CACHE.read_text("utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        cache = {}
+    todo = [q for q in rows_by_q if q not in cache]
+    print(f"[주소→좌표] {len(rows_by_q):,}개 주소 중 새로 조회 {len(todo):,}개", flush=True)
+    deadline = time.time() + budget_min * 60
+    for n, q in enumerate(todo, 1):
+        if time.time() > deadline:
+            note(f"주소→좌표: 시간 제한으로 {len(todo) - n + 1:,}개는 다음 실행에서 조회")
+            break
+        try:
+            cache[q] = nominatim(q)
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as e:
+            print(f"  실패 {q}: {e}", flush=True)
+            time.sleep(5)
+        if n % 100 == 0:
+            print(f"  {n:,}/{len(todo):,}", flush=True)
+            GEO_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=0), "utf-8")
+    GEO_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=0), "utf-8")
+    return cache
+
+
+def convert(raw_rows, keep_closed_days, geo_budget_min=0):
     cutoff = (dt.datetime.now(KST) - dt.timedelta(days=keep_closed_days)).strftime("%Y-%m-%d")
-    out, seen, no_xy = [], set(), 0
+    out, seen, no_xy, pending = [], set(), 0, []
     for r in raw_rows:
         rid = pick(r, "id")
         if not rid or rid in seen:
@@ -162,27 +221,49 @@ def convert(raw_rows, keep_closed_days):
             continue
         if any(w in status for w in ("취소", "말소", "만료")):
             continue
+        seen.add(rid)
         try:
             x, y = float(pick(r, "x")), float(pick(r, "y"))
             lng, lat = TO_WGS84.transform(x, y)
         except ValueError:
-            no_xy += 1
+            pending.append(r)  # 좌표 없음 → 아래에서 주소로 찾기
             continue
         if not (37.3 < lat < 37.8 and 126.6 < lng < 127.4):
             no_xy += 1
             continue
-        try:
-            area = round(float(pick(r, "area") or 0), 1)
-        except ValueError:
-            area = 0
-        seen.add(rid)
-        out.append([
-            rid, pick(r, "name"), pick(r, "type") or "기타", status, pick(r, "detail"),
-            pick(r, "road"), pick(r, "jibun"), pick(r, "tel"),
-            ymd(pick(r, "permit")), closed, pick(r, "hygiene"), area,
-            round(lat, 6), round(lng, 6), pick(r, "modified")[:10],
-        ])
+        out.append(make_row(r, rid, status, closed, lat, lng, ""))
+
+    # 좌표 없는 곳: 영업 중인 곳만 주소로 찾는다(폐업한 곳까지 찾을 필요는 없음)
+    closed_n = len(pending)
+    pending = [r for r in pending if "폐업" not in pick(r, "status")]
+    no_xy += closed_n - len(pending)
+    if pending and geo_budget_min:
+        cache = geocode({q: 1 for r in pending for q in geo_queries(r)}, geo_budget_min)
+        found = {"addr": 0, "road": 0}
+        for r in pending:
+            hit = next((cache[q] for q in geo_queries(r) if cache.get(q)), None)
+            if not hit:
+                no_xy += 1
+                continue
+            found[hit[2]] += 1
+            out.append(make_row(r, pick(r, "id"), pick(r, "status"), ymd(pick(r, "closed")), hit[0], hit[1], hit[2]))
+        note(f"좌표 없던 {len(pending):,}곳 중 주소로 찾음: 정확 {found['addr']:,} · 대략(도로) {found['road']:,}")
+    else:
+        no_xy += len(pending)
     return out, no_xy
+
+
+def make_row(r, rid, status, closed, lat, lng, geo):
+    try:
+        area = round(float(pick(r, "area") or 0), 1)
+    except ValueError:
+        area = 0
+    return [
+        rid, pick(r, "name"), pick(r, "type") or "기타", status, pick(r, "detail"),
+        pick(r, "road"), pick(r, "jibun"), pick(r, "tel"),
+        ymd(pick(r, "permit")), closed, pick(r, "hygiene"), area,
+        round(lat, 6), round(lng, 6), pick(r, "modified")[:10], geo,
+    ]
 
 
 def parse_csv(data, name):
@@ -251,7 +332,7 @@ def main():
             raw = []
             for svc in services:
                 raw.extend(fetch_service(key, svc))
-    rows, no_xy = convert(raw, keep_days)
+    rows, no_xy = convert(raw, keep_days, int(os.environ.get("GEOCODE_MINUTES", "40")))
     n_open = sum(1 for r in rows if "폐업" not in r[3])
     note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 좌표 없음/범위 밖 {no_xy:,}건 제외")
 

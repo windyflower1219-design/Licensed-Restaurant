@@ -14,7 +14,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
 
@@ -36,12 +36,12 @@ jobs:
         run: |
           git config user.name "restaurant-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          # 수집(약 10분) 중에 다른 커밋이 올라왔을 수 있다 → 최신 main 위에 새 데이터만 얹는다
-          cp data/restaurants.json "$RUNNER_TEMP/restaurants.json"
+          # 수집 중에 다른 커밋이 올라왔을 수 있다 → 최신 main 위에 새 데이터만 얹는다
+          cp data/restaurants.json data/geocode_cache.json "$RUNNER_TEMP/"
           git fetch -q origin main
           git reset -q --hard origin/main
-          cp "$RUNNER_TEMP/restaurants.json" data/restaurants.json
-          git add data/restaurants.json
+          cp "$RUNNER_TEMP/restaurants.json" "$RUNNER_TEMP/geocode_cache.json" data/
+          git add data/restaurants.json data/geocode_cache.json
           if git diff --cached --quiet; then
             echo "변경 없음"
           else

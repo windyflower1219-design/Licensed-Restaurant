@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>과제비 식당 지도</title>
-<meta name="description" content="회사 근처 일반음식점(인허가 기준)을 지도에서 확인합니다. 서울 열린데이터광장 데이터를 매일 갱신합니다.">
+<title>과제비 식당 체크</title>
+<meta name="description" content="회사 근처 식당이 과제비로 써도 되는 일반음식점인지 지도에서 확인합니다. 서울 열린데이터광장 인허가 데이터 기준.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -113,6 +113,10 @@ input[type=search] { flex: 1; }
 .pill.caution { color: var(--warn); font-weight: 600; }
 .floor { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); background: var(--chip); border-radius: 4px; padding: 0 5px; }
 .hint { color: var(--muted); font-size: 12px; }
+.help-btn { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 600; font-size: 13px; line-height: 1; }
+.help-btn[aria-expanded="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.help { display: grid; gap: 6px; padding-top: 4px; }
+#cautionToggle[aria-pressed="false"] { color: var(--warn); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 .reviews { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -142,14 +146,17 @@ input[type=search] { flex: 1; }
 <div class="app">
   <aside class="side">
     <header class="top">
-      <div class="brand"><div class="seal" aria-hidden="true">일반</div><h1>과제비 식당 지도</h1></div>
+      <div class="brand"><div class="seal" aria-hidden="true">일반</div><h1>과제비 식당 체크</h1>
+        <button class="help-btn" id="helpBtn" type="button" aria-expanded="false" aria-controls="help" title="이용 안내">?</button></div>
       <div class="stamp-line" id="stamp">데이터 불러오는 중…</div>
-      <div class="hint">구청에 <b>일반음식점</b>으로 등록된 곳만 표시합니다. 리뷰·메뉴·영업시간은 각 가게의 카카오맵·네이버지도·구글지도 버튼으로 확인하세요.</div>
+      <div class="help" id="help" hidden>
+      <div class="hint">구청에 <b>일반음식점</b>으로 등록된 곳만 나옵니다. 지도에 없으면 일반음식점이 아닐 수 있어요. 호프·소주방 같은 주점성 업종은 기본으로 숨기고, 검색하면 경고와 함께 보여줍니다. 리뷰·메뉴·영업시간은 가게마다 있는 카카오맵·네이버지도·구글지도 버튼으로 확인하세요.</div>
       <div class="legend" aria-label="범례">
         <span><i style="background:#c2410c"></i>식사 (영업 중)</span>
         <span><i style="border:2.5px solid var(--warn);background:#fff"></i>과제비 주의 (주점 등)</span>
         <span><i style="border:2px solid var(--off);background:#fff"></i>휴업·폐업</span>
         <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물 여러 곳</span>
+      </div>
       </div>
     </header>
 
@@ -170,22 +177,15 @@ input[type=search] { flex: 1; }
         <button class="btn" id="mapOnly" type="button" aria-pressed="false">지도에 보이는 곳만</button>
       </div>
       <div class="row">
-        <span class="label">영업상태</span>
         <div class="chips" id="statusChips"></div>
+        <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종 <span class="n" id="cautionN"></span></button>
       </div>
       <div style="display:grid;gap:6px">
         <div class="row" style="justify-content:space-between">
-          <span class="label">업태 (여러 개 선택)</span>
+          <span class="label">업태</span>
           <span><button class="linkbtn" id="typeAll" type="button">전체 선택</button> · <button class="linkbtn" id="typeNone" type="button">해제</button></span>
         </div>
         <div class="chips" id="typeChips"></div>
-      </div>
-      <div style="display:grid;gap:6px">
-        <div class="row" style="justify-content:space-between">
-          <span class="label" style="color:var(--warn)">과제비 주의 업종</span>
-          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">지도에 같이 보기 <span class="n" id="cautionN"></span></button>
-        </div>
-        <div class="hint" id="cautionTypes"></div>
       </div>
     </section>
 
@@ -455,7 +455,8 @@ function start() {
 
   const cc = {}; for (const d of base) if (isCaution(d)) cc[d.type] = (cc[d.type] || 0) + 1;
   $("#cautionN").textContent = Object.values(cc).reduce((a, b) => a + b, 0);
-  $("#cautionTypes").textContent = `${[...CAUTION_TYPES].map((t) => `${t} ${cc[t] || 0}`).join(" · ")} — 기본으로 숨기고, 상호를 검색하면 경고와 함께 나옵니다.`;
+  $("#cautionToggle").title = `과제비로 쓰기 곤란한 주점성 업태 — 눌러서 지도에 같이 보기
+${[...CAUTION_TYPES].map((t) => `${t} ${cc[t] || 0}곳`).join(", ")}`;
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
   $("#radius").value = String(store.get("radius", 500));
@@ -485,7 +486,8 @@ function markerStyle(d, n, active) {
   const radius = (active ? 9 : 6) + (n > 1 ? 1.5 : 0);
   if (d.sc !== "open") return { radius, weight: 2, color: getCss("--off"), fillColor: "#ffffff", fillOpacity: 0.7 };
   if (isCaution(d)) return { radius, weight: 2.5, color: getCss("--warn"), fillColor: "#ffffff", fillOpacity: 0.9 };
-  return { radius, weight: n > 1 ? 2 : 1, color: n > 1 ? getCss("--ink") : "#ffffff", fillColor: colorOf(d.type), fillOpacity: 0.9 };
+  return { radius, weight: n > 1 ? 2 : 1, color: n > 1 ? getCss("--ink") : "#ffffff", fillColor: colorOf(d.type), fillOpacity: 0.9,
+           ...(d.geo === "road" ? { color: getCss("--ink"), weight: 1.5, dashArray: "2 3", fillOpacity: 0.55 } : {}) };
 }
 
 function render() {
@@ -588,7 +590,7 @@ function popupHtml(rows) {
         <dt>업태</dt><dd>${esc(d.type)}</dd>
         <dt>규모</dt><dd>${sizeHtml(d)}</dd>
         <dt>전화</dt><dd class="mono">${telHtml(d)}</dd>
-        <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}</dd>
+        <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}${d.geo === "road" ? `<br><span class="hint">원본에 좌표가 없어 지도 위치는 도로 기준 대략입니다</span>` : ""}</dd>
         <dt>거리</dt><dd>${fmtDist(d.dist)} · 도보 약 ${walkMin(d.dist)}분</dd>
       </dl>
       ${reviewsHtml(d, "btn")}</div>`;
@@ -640,6 +642,9 @@ function openItem(id) {
 
 $("#typeAll").addEventListener("click", () => { document.querySelectorAll("[data-type]").forEach((b) => { sel.types.add(b.dataset.type); b.setAttribute("aria-pressed", "true"); }); store.set("types", [...sel.types]); render(); });
 $("#typeNone").addEventListener("click", () => { sel.types.clear(); document.querySelectorAll("[data-type]").forEach((b) => b.setAttribute("aria-pressed", "false")); store.set("types", []); render(); });
+$("#helpBtn").addEventListener("click", () => {
+  const open = $("#help").hidden; $("#help").hidden = !open; $("#helpBtn").setAttribute("aria-expanded", open);
+});
 $("#cautionToggle").addEventListener("click", () => {
   showCaution = !showCaution; store.set("showCaution", showCaution);
   $("#cautionToggle").setAttribute("aria-pressed", showCaution); listLimit = 200; render();
