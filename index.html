@@ -71,6 +71,7 @@ input[type=search]:focus { background: var(--panel); border-color: var(--line); 
 input[type=search] { flex: 1; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 132px; overflow-y: auto; }
 .chip { border: 1px solid transparent; background: var(--chip); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; transition: background .15s; }
+.chip.zero:not([aria-pressed="true"]) { opacity: .45; }
 .chip:hover { background: color-mix(in srgb, var(--ink) 8%, var(--chip)); }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
 .chip .n { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
@@ -277,7 +278,7 @@ const CAUTION_TYPES = new Set(["호프/통닭", "정종/대포집/소주방", "�
 const isCaution = (d) => CAUTION_TYPES.has(d.type);
 /* 화면에 보이는 업태 이름만 다듬는다(필터·저장값은 원래 이름 그대로) */
 const TYPE_LABELS = {
-  "중국식": "중식", "경양식": "양식", "외국음식전문점(인도,태국등)": "세계음식", "통닭(치킨)": "치킨",
+  "중국식": "중식", "경양식": "양식", "외국음식전문점(인도,태국등)": "세계음식(인도, 태국 등)", "통닭(치킨)": "치킨",
   "김밥(도시락)": "김밥·도시락", "까페": "카페", "식육(숯불구이)": "고기구이", "뷔페식": "뷔페",
   "패밀리레스트랑": "패밀리레스토랑", "탕류(보신용)": "보양식", "복어취급": "복어요리", "냉면집": "냉면",
   "출장조리": "출장요리", "호프/통닭": "호프", "정종/대포집/소주방": "소주방·대포집",
@@ -470,16 +471,11 @@ function start() {
   byPlace = new Map();
   for (const d of DATA) { const k = placeKey(d); if (!byPlace.has(k)) byPlace.set(k, []); byPlace.get(k).push(d); }
 
-  // 업태 칩(식사 업태만): 반경 2km 안 기준 개수로 정렬
-  const near = DATA.filter((d) => d.dist < 2000 && d.sc === "open");
-  const base = near.length ? near : DATA;
-  typeCounts = {}; for (const d of base) if (!isCaution(d)) typeCounts[d.type] = (typeCounts[d.type] || 0) + 1;
-  typeOrder = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a]);
-  for (const t of [...sel.types]) if (!typeCounts[t]) sel.types.delete(t);
-  renderTypeChips();
+  // 업태 칩(식사 업태만): 순서는 전체 개수 기준으로 고정(반경을 바꿔도 칩 위치가 흔들리지 않게), 숫자는 render()에서 반경 기준
+  const all = {}; for (const d of DATA) if (d.sc === "open" && !isCaution(d)) all[d.type] = (all[d.type] || 0) + 1;
+  typeOrder = Object.keys(all).sort((a, b) => all[b] - all[a]);
+  for (const t of [...sel.types]) if (!all[t]) sel.types.delete(t);
 
-  const cc = {}; for (const d of base) if (isCaution(d)) cc[d.type] = (cc[d.type] || 0) + 1;
-  $("#cautionN").textContent = Object.values(cc).reduce((a, b) => a + b, 0);
   $("#tipCaution").textContent = "호프, 정종, 대포집, 소주방, 감성주점, 라이브카페";
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
@@ -488,10 +484,21 @@ function start() {
 }
 
 /* 업태 칩: 고른 칩에만 그 업태의 지도 색 점을 보여준다 */
+/* 업태·주의업종 개수: 지금 고른 반경 안의 영업 중 가게 수 */
+function countTypes() {
+  const r = +$("#radius").value;
+  typeCounts = {}; let caution = 0;
+  for (const d of DATA) {
+    if (d.sc !== "open" || (r && d.dist > r)) continue;
+    if (isCaution(d)) caution++; else typeCounts[d.type] = (typeCounts[d.type] || 0) + 1;
+  }
+  $("#cautionN").textContent = caution;
+}
+
 function renderTypeChips() {
   $("#typeChips").innerHTML = typeOrder.map((t) => {
-    const on = sel.types.has(t);
-    return `<button type="button" class="chip" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(typeLabel(t))}<span class="n">${typeCounts[t]}</span></button>`;
+    const on = sel.types.has(t), n = typeCounts[t] || 0;
+    return `<button type="button" class="chip${n ? "" : " zero"}" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(typeLabel(t))}<span class="n">${n}</span></button>`;
   }).join("");
   $("#typeNone").hidden = !sel.types.size;
 }
@@ -524,6 +531,7 @@ function markerStyle(d, n, active) {
 function render() {
   const r = +$("#radius").value;
   circle.setRadius(r || 0); circle.setStyle({ opacity: r ? 0.55 : 0, fillOpacity: r ? 0.035 : 0 });
+  countTypes(); renderTypeChips();
   const rows = filtered();
   $("#count").textContent = rows.length.toLocaleString();
 
