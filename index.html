@@ -327,6 +327,7 @@ const sel = { types: new Set(store.get("types", [])) };
 let pickingOffice = false, listLimit = 200, activeId = null;
 let typeCounts = {}, typeOrder = [];
 let showCaution = store.get("showCaution", false);
+let focus = null;         // 목록에서 고른 가게 {id, key}: 그 건물 팝업에서 이 가게만 보여준다
 let groups = new Map();   // placeKey → { rows, marker } (현재 필터 결과 기준)
 let byPlace = new Map();  // placeKey → 그 건물의 모든 가게 (필터 무관, 팝업용)
 
@@ -531,11 +532,17 @@ function render() {
     const lead = g.rows[0];
     const active = g.rows.some((d) => d.id === activeId);
     const m = L.circleMarker([lead.lat, lead.lng], markerStyle(lead, g.n, active));
-    m.bindPopup(() => popupHtml(buildingRows(k)), { maxWidth: 340, minWidth: 260 });
+    // 지도에서 점을 누르면 건물 전체, 목록에서 가게를 누르면 그 가게만
+    m.bindPopup(() => {
+      const all = buildingRows(k);
+      const one = focus?.key === k && all.find((d) => d.id === focus.id);
+      return one ? popupHtml([one], all.length, k) : popupHtml(all);
+    }, { maxWidth: 340, minWidth: 260 });
     m.on("popupopen", () => {
       if (!g.rows.some((d) => d.id === activeId)) activeId = lead.id;
       markActive(); scrollActiveShop();
     });
+    m.on("popupclose", () => { if (focus?.key === k) focus = null; });
     m._key = k; g.marker = m; m.addTo(layer);
   }
   drawCounts();
@@ -596,7 +603,7 @@ function reviewsHtml(d, cls) {
   return `<div class="reviews"><span class="rl">리뷰·메뉴</span>${mapLinks(d, cls)}</div>`;
 }
 
-function popupHtml(rows) {
+function popupHtml(rows, total = rows.length, key = "") {
   if (rows.length === 1) {
     const d = rows[0], fl = floorOf(d).label;
     return `<div class="pop">
@@ -609,7 +616,8 @@ function popupHtml(rows) {
         <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}${d.geo === "road" ? `<br><span class="hint">원본에 좌표가 없어 지도 위치는 도로 기준 대략입니다</span>` : ""}</dd>
         <dt>거리</dt><dd>${fmtDist(d.dist)} · 도보 약 ${walkMin(d.dist)}분</dd>
       </dl>
-      ${reviewsHtml(d, "btn")}</div>`;
+      ${reviewsHtml(d, "btn")}
+      ${total > 1 ? `<button class="linkbtn" type="button" data-showall="${esc(key)}" style="margin-top:8px">같은 건물 ${total}곳 모두 보기</button>` : ""}</div>`;
   }
   const d0 = rows[0];
   return `<div class="pop">
@@ -643,6 +651,8 @@ document.addEventListener("click", (e) => {
   const tc = e.target.closest("[data-type]");
   if (tc) { const t = tc.dataset.type; sel.types.has(t) ? sel.types.delete(t) : sel.types.add(t); store.set("types", [...sel.types]); listLimit = 200; renderTypeChips(); return render(); }
   if (e.target.closest(".reviews a")) return;
+  const sa = e.target.closest("[data-showall]");
+  if (sa) { focus = null; groups.get(sa.dataset.showall)?.marker?.getPopup().update(); markActive(); scrollActiveShop(); return; }
   const it = e.target.closest(".item");
   if (it) openItem(it.dataset.id);
 });
@@ -651,7 +661,9 @@ function openItem(id) {
   activeId = id; markActive();
   const d = DATA.find((x) => x.id === id); if (!d) return;
   map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17));
-  groups.get(placeKey(d))?.marker?.openPopup();
+  const m = groups.get(placeKey(d))?.marker; if (!m) return;
+  focus = { id, key: placeKey(d) };
+  if (m.isPopupOpen()) m.getPopup().update(); else m.openPopup();
 }
 
 $("#typeNone").addEventListener("click", () => { sel.types.clear(); store.set("types", []); renderTypeChips(); render(); });
