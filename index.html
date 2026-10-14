@@ -151,10 +151,10 @@ input[type=search] { flex: 1; }
 .pop .shop .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .pop .shop b { font-size: 13.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 2000; }
-/* 회사: 건물 아이콘이 든 핀, 누르면 이름 팝업 */
-.office-pop .leaflet-popup-content { min-width: 0; margin: 7px 24px 7px 11px; }
-.office-pop .office-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
-.leaflet-container .office-pop a.leaflet-popup-close-button { width: 20px; height: 20px; top: 4px; right: 4px; background-size: 8px; }
+/* 회사: 건물 아이콘이 든 핀, 마우스를 올리면 작은 '회사' 말풍선 */
+.leaflet-tooltip.office-tip { background: var(--office); color: #fff; border: 0; border-radius: 8px; padding: 4px 10px;
+  font: 600 12px/1.4 var(--font-body); letter-spacing: -0.2px; box-shadow: 0 4px 12px rgba(16,24,40,.22); }
+.leaflet-tooltip-top.office-tip::before { border-top-color: var(--office); }
 .office-pin { width: 34px; height: 42px; filter: drop-shadow(0 3px 4px rgba(16,24,40,.3)); }
 .office-pin .body { fill: var(--office); }
 
@@ -488,8 +488,8 @@ const OFFICE_PIN = `<svg class="office-pin" viewBox="0 0 34 42" aria-hidden="tru
   <path fill="#fff" d="M11 25V11.5l7-2.5v16h-7zm8 0V14l5 1.6V25h-5zm-6-12v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm5 -2.4v1.8h1.4v-1.8zm0 3v1.8h1.4v-1.8z"/></svg>`;
 const officeMarker = L.marker([office.lat, office.lng], {
   icon: L.divIcon({ className: "", html: OFFICE_PIN, iconSize: [34, 42], iconAnchor: [17, 41] }),
-  zIndexOffset: 1000, title: "회사", keyboard: false,
-}).addTo(map).bindPopup(() => `<div class="office-name">회사</div>`, { offset: [0, -34], minWidth: 0, className: "office-pop" });
+  zIndexOffset: 1000, keyboard: false,
+}).addTo(map).bindTooltip("회사", { direction: "top", offset: [0, -40], className: "office-tip", opacity: 1 });   // 마우스를 올리거나 누르면
 const circle = L.circle([office.lat, office.lng], { radius: 500, color: getCss("--office"), weight: 1.2, opacity: 0.55, dashArray: "4 5", fillColor: getCss("--office"), fillOpacity: 0.035, interactive: false }).addTo(map);
 function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
