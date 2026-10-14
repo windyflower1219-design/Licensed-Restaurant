@@ -158,14 +158,70 @@ input[type=search] { flex: 1; }
 .office-pin { width: 34px; height: 42px; filter: drop-shadow(0 3px 4px rgba(16,24,40,.3)); }
 .office-pin .body { fill: var(--office); }
 
-@media (max-width: 760px) {
-  .app { grid-template-columns: 1fr; grid-template-rows: 46vh 1fr; }
-  #map { order: -1; }
-  .side { border-right: 0; border-top: 1px solid var(--line); overflow-y: auto; }
-  .list { flex: none; overflow: visible; }   /* 좁은 화면: 필터+목록을 패널 하나로 스크롤 */
-  .pop .shops { max-height: max(110px, calc(46vh - 190px)); }
-  .filters, .summary, .item, header.top { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-}
+/* 공유 버튼, 선택 업태 범례, 상세 패널(모바일), 시작 선택 화면 */
+.acts-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.btn.share { display: inline-flex; gap: 5px; align-items: center; }
+.btn.share svg { width: 13px; height: 13px; }
+.type-legend { background: var(--panel); border-radius: 10px; padding: 7px 10px; box-shadow: 0 2px 10px rgba(16,24,40,.15); font: 12px/1.6 var(--font-body); color: var(--ink); display: grid; gap: 1px; }
+.type-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 0 1.5px #fff; }
+.empty-q { padding: 18px 16px; display: grid; gap: 6px; }
+.empty-q b { font-size: 14px; }
+.empty-q p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.sheet-handle { display: none; }
+.detail { display: none; }
+.gate { position: fixed; inset: 0; z-index: 3000; background: rgba(16,24,40,.45); display: grid; place-items: end center; padding: 16px; }
+.gate .card { width: 100%; max-width: 420px; background: var(--panel); border-radius: 20px; padding: 22px 20px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; box-shadow: 0 -4px 30px rgba(16,24,40,.2); }
+.gate .head { display: flex; gap: 12px; align-items: center; }
+.gate .head svg { width: 48px; height: 48px; flex: none; }
+.gate .head b { font-size: 19px; letter-spacing: -0.5px; display: block; }
+.gate .head span { color: var(--muted); font-size: 13px; }
+.gate .go { display: block; text-align: center; padding: 13px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; border: 0; width: 100%; }
+.gate .go.primary { background: var(--brand); color: #fff; }
+.gate .go.ghost { background: var(--chip); color: var(--ink); }
+.app-update { position: fixed; z-index: 2500; left: 10px; right: 10px; top: calc(env(safe-area-inset-top, 0px) + 10px); background: var(--brand); color: #fff;
+  border-radius: 14px; padding: 11px 14px; display: flex; gap: 10px; align-items: center; font-size: 13px; box-shadow: 0 6px 20px rgba(16,24,40,.25); }
+.app-update a { margin-left: auto; color: var(--brand); background: #fff; border-radius: 8px; padding: 6px 11px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.app-update button { background: none; border: 0; color: #fff; opacity: .7; font-size: 18px; line-height: 1; padding: 0 2px; }
+.gate .note { color: var(--muted); font-size: 12px; margin: -4px 0 0; text-align: center; }
+
+/* ===================== 모바일 전용 화면 =====================
+   전체 화면 지도 + 위쪽 떠 있는 검색 카드 + 아래에서 올라오는 패널(목록·가게 상세). */
+body.mobile .app { display: block; height: 100%; }
+body.mobile #map { position: fixed !important; inset: 0; height: auto; }   /* Leaflet이 처음에 position:relative를 직접 넣어서 !important */
+body.mobile header.top { position: fixed; z-index: 1100; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 10px; right: 10px;
+  background: var(--panel); border: 0; border-radius: 16px; padding: 10px 12px 12px; box-shadow: 0 4px 18px rgba(16,24,40,.14); gap: 6px; }
+body.mobile .brand { gap: 8px; }
+body.mobile .logo { width: 24px; height: 24px; }
+body.mobile h1 { font-size: 15px; }
+body.mobile .stamp-line { font-size: 11px; margin-top: -3px; }
+body.mobile .side { position: fixed; z-index: 1050; left: 0; right: 0; bottom: 0; height: 40vh; border: 0; border-radius: 18px 18px 0 0;
+  box-shadow: 0 -4px 22px rgba(16,24,40,.14); overflow: hidden; transition: height .25s ease; padding-bottom: env(safe-area-inset-bottom, 0px); }
+body.mobile .side.dragging { transition: none; }
+body.mobile .sheet-handle { display: grid; place-items: center; height: 22px; flex: none; cursor: grab; touch-action: none; }
+body.mobile .sheet-handle span { width: 38px; height: 4px; border-radius: 2px; background: var(--line); }
+body.mobile .filters { padding: 0 14px 10px; gap: 8px; border: 0; }
+body.mobile .filters .label { display: none; }
+body.mobile .chips { flex-wrap: nowrap; overflow-x: auto; max-height: none; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
+body.mobile .chips::-webkit-scrollbar { display: none; }
+body.mobile .chip { padding: 6px 12px; font-size: 13px; }
+body.mobile .summary { padding: 8px 14px; touch-action: none; }
+body.mobile .item { padding: 12px 16px; }
+body.mobile .item .nm { font-size: 15px; }
+body.mobile .side.show-detail .filters, body.mobile .side.show-detail .summary, body.mobile .side.show-detail .list { display: none; }
+body.mobile .side.show-detail .detail { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+body.mobile .detail .back { align-self: flex-start; background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0 16px 6px; }
+body.mobile #detailBody { overflow-y: auto; padding: 0 16px 16px; flex: 1; min-height: 0; }
+body.mobile #detailBody .pop h3 { font-size: 18px; padding-right: 0; }
+body.mobile #detailBody .pop dl { font-size: 13.5px; gap: 4px 12px; }
+body.mobile #detailBody .pop .shops { max-height: none; margin: 0 -16px; }
+body.mobile #detailBody .pop .shop { padding: 10px 16px; }
+body.mobile #detailBody .reviews .btn { padding: 7px 11px; font-size: 13px; }
+body.mobile .leaflet-control-zoom { display: none; }
+body.mobile .leaflet-top { top: var(--hdr-bottom, 130px); }
+body.mobile .leaflet-bottom { display: none; }
+body.mobile .tip { max-width: calc(100vw - 44px); }
+body.mobile .toast { bottom: calc(var(--sheet-h, 40vh) + 12px); }
+body.in-app header.top { top: 10px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -181,19 +237,19 @@ input[type=search] { flex: 1; }
             <div class="hint">구청 데이터 반영이 늦어 실제와 다를 수 있음 <span class="nw">(예시: 스타벅스 삼성동점)</span></div>
             <div class="legend" aria-label="범례">
               <span><i style="background:var(--ok);box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(16,24,40,.15)"></i>일반음식점</span>
-              <span><i style="border:2px solid var(--warn);background:#fff"></i>주점 등 주의</span>
+              <span><i style="border:2px solid var(--warn);background:#fff"></i>주의업종</span>
               <span><i style="border:1.5px dashed var(--ok);background:color-mix(in srgb,var(--ok) 35%,#fff)"></i>대략 위치</span>
               <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물</span>
             </div>
+            <a class="hint" id="apkLink" href="#" hidden style="text-decoration:underline">안드로이드 앱 설치</a>
           </div>
         </span></div>
       <div class="stamp-line" id="stamp">데이터 불러오는 중…</div>
+      <div class="row"><input type="search" id="q" placeholder="상호·주소 검색 (예: 국밥, 테헤란로)" aria-label="상호 또는 주소 검색" enterkeyhint="search"></div>
     </header>
 
+    <div class="sheet-handle" id="sheetHandle" aria-hidden="true"><span></span></div>
     <section class="filters" id="filters" hidden>
-      <div class="row">
-        <input type="search" id="q" placeholder="상호·주소 검색 (예: 국밥, 테헤란로)" aria-label="상호 또는 주소 검색">
-      </div>
       <div class="row">
         <span class="label">회사에서</span>
         <select id="radius" aria-label="반경">
@@ -204,6 +260,7 @@ input[type=search] { flex: 1; }
           <option value="0">전체</option>
         </select>
         <button class="btn" id="setOffice" type="button">회사 위치 바꾸기</button>
+        <button class="linkbtn" id="resetOffice" type="button" hidden>원래 위치로</button>
       </div>
       <div style="display:grid;gap:6px">
         <div class="row" style="justify-content:space-between">
@@ -214,15 +271,16 @@ input[type=search] { flex: 1; }
       </div>
       <div class="row">
         <span class="tip-wrap">
-          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종 <span class="n" id="cautionN"></span></button>
+          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주의업종 <span class="n" id="cautionN"></span></button>
           <button class="help-btn sm" type="button" data-tip="tipCaution" aria-expanded="false" aria-label="주의업종 설명">?</button>
           <div class="tip left" id="tipCaution" hidden></div>
         </span>
       </div>
     </section>
 
-    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span>회사에서 가까운 순</span></div>
+    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span id="sortNote">회사에서 가까운 순</span></div>
     <div class="list" id="list"></div>
+    <section class="detail" id="detail" hidden><button class="back" id="detailBack" type="button">‹ 목록으로</button><div id="detailBody"></div></section>
 
     <section class="empty" id="empty" hidden>
       <h2>아직 불러온 데이터가 없습니다</h2>
@@ -238,6 +296,17 @@ input[type=search] { flex: 1; }
   <div id="map" role="region" aria-label="지도"></div>
 </div>
 
+<!-- 휴대폰 브라우저로 처음 들어왔을 때: 모바일 웹 / 앱 설치 선택 -->
+<div class="gate" id="gate" hidden>
+  <div class="card" role="dialog" aria-labelledby="gateTitle">
+    <div class="head"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--brand)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg>
+      <div><b id="gateTitle">밥도장</b><span>과제비 사용 가능 식당</span></div></div>
+    <a class="go primary" id="gateApk" href="#">앱 설치하기 (안드로이드)</a>
+    <p class="note" id="gateApkNote">설치 후 「열기」를 누르면 바로 실행돼요. 처음이면 「출처를 알 수 없는 앱」 설치 허용이 필요할 수 있어요.</p>
+    <button class="go ghost" id="gateWeb" type="button">모바일 웹으로 보기</button>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
@@ -245,6 +314,11 @@ input[type=search] { flex: 1; }
 /* ===== 설정: 회사 위치를 정확히 맞추려면 여기 좌표를 바꾸세요 ===== */
 const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
+const SITE_URL = "https://windyflower1219-design.github.io/Licensed-Restaurant/";   // 공유 링크 기준 주소
+const APK_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/releases/latest/download/babdojang.apk";
+const IN_APP = /BabdojangApp/.test(navigator.userAgent) || new URLSearchParams(location.search).has("app");
+const MQ = matchMedia("(max-width: 760px)");
+const isMobile = () => MQ.matches;
 
 /* ---------- 유틸 ---------- */
 const $ = (s) => document.querySelector(s);
@@ -338,7 +412,7 @@ const sel = { types: new Set(store.get("types", [])) };
 let pickingOffice = false, listLimit = 200, activeId = null;
 let typeCounts = {}, typeOrder = [];
 let showCaution = store.get("showCaution", false);
-let focus = null;         // 목록에서 고른 가게 {id, key}: 그 건물 팝업에서 이 가게만 보여준다
+let cur = null;           // 지금 열린 곳 {k: 건물 키, focusId: 목록에서 고른 가게(그 가게만 보여줌) 또는 null(건물 전체)}
 let groups = new Map();   // placeKey → { rows, marker } (현재 필터 결과 기준)
 let byPlace = new Map();  // placeKey → 그 건물의 모든 가게 (필터 무관, 팝업용)
 
@@ -370,9 +444,27 @@ map.on("click", (e) => {
   officeMarker.setLatLng(e.latlng); circle.setLatLng(e.latlng);
   pickingOffice = false; $("#setOffice").classList.remove("on"); $("#setOffice").textContent = "회사 위치 바꾸기";
   map.getContainer().style.cursor = "";
-  computeDist(); render(); toast("회사 위치를 저장했습니다");
+  computeDist(); render(); updateResetOffice(); toast("회사 위치를 저장했습니다");
 });
+function updateResetOffice() {
+  $("#resetOffice").hidden = office.lat === OFFICE_DEFAULT.lat && office.lng === OFFICE_DEFAULT.lng;
+}
 map.on("moveend", drawCounts);
+/* 데스크톱 팝업은 하나를 돌려쓴다(모바일은 아래 패널에 상세를 띄움) */
+const sharedPopup = L.popup({ maxWidth: 340, minWidth: 260 });
+map.on("popupclose", (e) => { if (e.popup === sharedPopup) cur = null; });
+
+/* 선택한 업태 범례: 업태를 고르면 지도 구석에 색과 이름을 보여준다 */
+const TypeLegend = L.Control.extend({
+  options: { position: "topright" },
+  onAdd() { const d = L.DomUtil.create("div", "type-legend"); d.hidden = true; L.DomEvent.disableClickPropagation(d); return d; },
+});
+const typeLegend = new TypeLegend().addTo(map);
+function renderTypeLegend() {
+  const el = typeLegend.getContainer();
+  el.hidden = !sel.types.size;
+  el.innerHTML = [...sel.types].map((t) => `<div><i style="background:${colorOf(t)}"></i>${esc(typeLabel(t))}</div>`).join("");
+}
 
 /* ---------- 데이터 불러오기 ---------- */
 function fromRows(fields, rows) {
@@ -481,7 +573,11 @@ function start() {
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
   $("#radius").value = String(store.get("radius", 500));
+  updateResetOffice();
   render();
+  layoutMobile();
+  const sharedId = new URLSearchParams(location.search).get("id");
+  if (sharedId && DATA.some((d) => d.id === sharedId)) openItem(sharedId);
 }
 
 /* 업태 칩: 고른 칩에만 그 업태의 지도 색 점을 보여준다 */
@@ -511,7 +607,7 @@ function filtered() {
     d.sc === "open" &&
     // 주의 업태는 토글을 켰거나 검색했을 때만. 식사 업태는 칩 선택을 따른다.
     (isCaution(d) ? (showCaution || q) : (!sel.types.size || sel.types.has(d.type))) &&
-    (!r || d.dist <= r) &&
+    (q || !r || d.dist <= r) &&   // 검색할 때는 반경과 상관없이 강남구 전체에서 찾는다
     (!q || (d.name + " " + d.road + " " + d.jibun).toLowerCase().includes(q))
   ).sort((a, b) => a.dist - b.dist);
 }
@@ -534,7 +630,10 @@ function render() {
   circle.setRadius(r || 0); circle.setStyle({ opacity: r ? 0.55 : 0, fillOpacity: r ? 0.035 : 0 });
   countTypes(); renderTypeChips();
   const rows = filtered();
+  const q = $("#q").value.trim();
   $("#count").textContent = rows.length.toLocaleString();
+  $("#sortNote").textContent = q ? "강남구 전체 검색 · 가까운 순" : "회사에서 가까운 순";
+  renderTypeLegend();
 
   // 같은 좌표(같은 건물)는 점 하나로 묶는다
   groups = new Map();
@@ -550,17 +649,8 @@ function render() {
     const lead = g.rows[0];
     const active = g.rows.some((d) => d.id === activeId);
     const m = L.circleMarker([lead.lat, lead.lng], markerStyle(lead, g.n, active));
-    // 지도에서 점을 누르면 건물 전체, 목록에서 가게를 누르면 그 가게만
-    m.bindPopup(() => {
-      const all = buildingRows(k);
-      const one = focus?.key === k && all.find((d) => d.id === focus.id);
-      return one ? popupHtml([one], all.length, k) : popupHtml(all);
-    }, { maxWidth: 340, minWidth: 260 });
-    m.on("popupopen", () => {
-      if (!g.rows.some((d) => d.id === activeId)) activeId = lead.id;
-      markActive(); scrollActiveShop();
-    });
-    m.on("popupclose", () => { if (focus?.key === k) focus = null; });
+    // 지도에서 점을 누르면 건물 전체, 목록에서 가게를 누르면 그 가게만(openItem)
+    m.on("click", () => openPlace(k, null));
     m._key = k; g.marker = m; m.addTo(layer);
   }
   drawCounts();
@@ -574,11 +664,18 @@ function render() {
       <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(typeLabel(d.type))}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
-        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 같은 건물 ${same}곳</span>` : ""}</div>
-      <div class="ext reviews"><span class="rl">리뷰·메뉴</span>${mapLinks(d, "ext-a")}</div></div>`;
+        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 같은 건물 ${same}곳</span>` : ""}</div></div>`;
   }).join("") + (rows.length > listLimit ? `<button class="more" id="more" type="button">${(rows.length - listLimit).toLocaleString()}곳 더 보기</button>` : "")
-    + (rows.length === 0 ? `<div class="empty"><p style="margin:0;color:var(--muted)">조건에 맞는 곳이 없습니다. 반경을 넓히거나(「전체」) 업태 선택을 해제해 보세요.</p></div>` : "");
+    + (rows.length === 0 ? emptyHtml(q) : "");
   $("#more")?.addEventListener("click", () => { listLimit += 300; render(); });
+}
+
+/* 결과가 없을 때: 검색했다면 '일반음식점 목록에 없다'는 것 자체가 답이 되게 */
+function emptyHtml(q) {
+  if (!q) return `<div class="empty-q"><p>조건에 맞는 곳이 없습니다. 반경을 넓히거나 업태 선택을 해제해 보세요.</p></div>`;
+  if (sel.types.size) return `<div class="empty-q"><b>‘${esc(q)}’ — 고른 업태 안에는 없어요</b><p>업태 선택을 해제하고 다시 찾아보세요.</p></div>`;
+  return `<div class="empty-q"><b>‘${esc(q)}’ — 일반음식점 인허가 목록에 없어요</b>
+    <p>휴게음식점(카페·제과점 등)이나 주점으로 등록됐거나, 간판과 다른 이름으로 등록됐을 수 있어요. 도로명주소로도 검색해 보세요.</p></div>`;
 }
 
 /* 같은 건물 개수 배지: 충분히 확대했을 때, 화면 안에 있는 것만 그린다(점이 수천 개라서) */
@@ -635,7 +732,8 @@ function popupHtml(rows, total = rows.length, key = "") {
         <dt>거리</dt><dd>${fmtDist(d.dist)} · 도보 약 ${walkMin(d.dist)}분</dd>
       </dl>
       ${reviewsHtml(d, "btn")}
-      ${total > 1 ? `<button class="linkbtn" type="button" data-showall="${esc(key)}" style="margin-top:8px">같은 건물 ${total}곳 모두 보기</button>` : ""}</div>`;
+      <div class="acts-row"><button class="btn share" type="button" data-share="${esc(d.id)}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2M5 5l3-3 3 3M3 9v4a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9"/></svg>링크 공유</button>
+      ${total > 1 ? `<button class="linkbtn" type="button" data-showall="${esc(key)}">같은 건물 ${total}곳 모두 보기</button>` : ""}</div></div>`;
   }
   const d0 = rows[0];
   return `<div class="pop">
@@ -670,21 +768,75 @@ document.addEventListener("click", (e) => {
   if (tc) { const t = tc.dataset.type; sel.types.has(t) ? sel.types.delete(t) : sel.types.add(t); store.set("types", [...sel.types]); listLimit = 200; renderTypeChips(); return render(); }
   if (e.target.closest(".reviews a")) return;
   const sa = e.target.closest("[data-showall]");
-  if (sa) { focus = null; groups.get(sa.dataset.showall)?.marker?.getPopup().update(); markActive(); scrollActiveShop(); return; }
+  if (sa && cur) { cur.focusId = null; refreshPlace(); return; }
+  const sh = e.target.closest("[data-share]");
+  if (sh) return shareShop(sh.dataset.share);
   const it = e.target.closest(".item");
   if (it) openItem(it.dataset.id);
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.classList?.contains("item")) openItem(e.target.dataset.id); });
+/* 목록·공유 링크에서 가게 하나 열기 (지도에 안 그려진 곳이어도 열린다) */
 function openItem(id) {
-  activeId = id; markActive();
   const d = DATA.find((x) => x.id === id); if (!d) return;
-  map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17));
-  const m = groups.get(placeKey(d))?.marker; if (!m) return;
-  focus = { id, key: placeKey(d) };
-  if (m.isPopupOpen()) m.getPopup().update(); else m.openPopup();
+  openPlace(placeKey(d), id);
+}
+/* 건물(k) 열기: focusId가 있으면 그 가게만, 없으면 건물 전체 */
+function openPlace(k, focusId) {
+  const all = buildingRows(k); if (!all.length) return;
+  cur = { k, focusId };
+  activeId = focusId || all[0].id;
+  const d = all.find((x) => x.id === activeId) || all[0];
+  if (isMobile()) {
+    showDetail();
+    map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17), { animate: false });
+    centerAboveSheet([d.lat, d.lng]);
+  } else {
+    map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17));
+    sharedPopup.setLatLng([d.lat, d.lng]).setContent(placeHtml());
+    if (!map.hasLayer(sharedPopup)) sharedPopup.openOn(map);
+    sharedPopup.options.cur = cur;
+  }
+  markActive(); scrollActiveShop();
+  restyleMarkers();
+}
+function placeHtml() {
+  const all = buildingRows(cur.k);
+  const one = cur.focusId && all.find((d) => d.id === cur.focusId);
+  return one ? popupHtml([one], all.length, cur.k) : popupHtml(all);
+}
+function refreshPlace() {
+  if (!cur) return;
+  if (isMobile()) $("#detailBody").innerHTML = placeHtml();
+  else sharedPopup.setContent(placeHtml());
+  markActive(); scrollActiveShop();
+}
+/* 고른 곳 점을 크게: 전체를 다시 그리지 않고 스타일만 바꾼다 */
+function restyleMarkers() {
+  for (const g of groups.values()) {
+    const active = g.rows.some((d) => d.id === activeId);
+    g.marker?.setStyle(markerStyle(g.rows[0], g.n, active));
+    g.marker?.setRadius(markerStyle(g.rows[0], g.n, active).radius);
+  }
+}
+
+/* 3) 가게 링크 공유: 앱 → 안드로이드 공유창, 휴대폰 웹 → 공유창, PC → 주소 복사 */
+async function shareShop(id) {
+  const d = DATA.find((x) => x.id === id); if (!d) return;
+  const base = IN_APP || !/^https?:/.test(location.protocol) ? SITE_URL : location.origin + location.pathname;
+  const url = `${base}?id=${encodeURIComponent(id)}`;
+  const text = `${d.name} — 일반음식점 · 영업 중 (${bldAddr(d)})`;
+  if (window.Android?.share) return window.Android.share(`${text}\n${url}`);
+  if (navigator.share && isMobile()) { try { await navigator.share({ title: d.name, text, url }); } catch {} return; }
+  try { await navigator.clipboard.writeText(url); toast("링크를 복사했어요"); }
+  catch { prompt("이 링크를 복사하세요", url); }
 }
 
 $("#typeNone").addEventListener("click", () => { sel.types.clear(); store.set("types", []); renderTypeChips(); render(); });
+$("#resetOffice").addEventListener("click", () => {
+  office = { ...OFFICE_DEFAULT }; store.set("office", office);
+  officeMarker.setLatLng([office.lat, office.lng]); circle.setLatLng([office.lat, office.lng]);
+  map.setView([office.lat, office.lng], 16); computeDist(); render(); updateResetOffice(); toast("원래 회사 위치로 돌렸어요");
+});
 /* ? 말풍선: 누르면 열고, 다시 누르거나 바깥을 누르면 닫는다 */
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-tip]");
@@ -698,7 +850,11 @@ $("#cautionToggle").addEventListener("click", () => {
   showCaution = !showCaution; store.set("showCaution", showCaution);
   $("#cautionToggle").setAttribute("aria-pressed", showCaution); listLimit = 200; render();
 });
-let qTimer; $("#q").addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(() => { listLimit = 200; render(); }, 150); });
+let qTimer; $("#q").addEventListener("input", () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { listLimit = 200; if (isMobile()) { hideDetail(); if (sheetState === "peek") setSheet("half"); } render(); }, 150);
+});
+$("#q").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); });
 $("#radius").addEventListener("change", () => {
   store.set("radius", +$("#radius").value); listLimit = 200; render();
   const r = +$("#radius").value; if (r) map.fitBounds(circle.getBounds(), { padding: [20, 20] });
@@ -710,6 +866,122 @@ $("#setOffice").addEventListener("click", () => {
   map.getContainer().style.cursor = pickingOffice ? "crosshair" : "";
 });
 
+/* ===================== 모바일: 아래 패널(시트) ===================== */
+let sheetState = "peek";
+function sheetHeights() {
+  const vh = window.innerHeight;
+  const hdr = $("header.top").getBoundingClientRect().bottom;
+  const peekParts = ["#sheetHandle", "#filters", "#summary"].map((s) => $(s)?.offsetHeight || 0).reduce((a, b) => a + b, 0);
+  return { peek: Math.min(peekParts + 76, vh * 0.45), half: Math.round(vh * 0.52), full: Math.round(vh - hdr - 8) };
+}
+function setSheet(state, px) {
+  if (!isMobile()) return;
+  sheetState = state;
+  const h = px ?? sheetHeights()[state];
+  $(".side").style.height = h + "px";
+  document.documentElement.style.setProperty("--sheet-h", h + "px");
+}
+function layoutMobile() {
+  document.body.classList.toggle("mobile", isMobile());
+  document.body.classList.toggle("in-app", IN_APP);
+  if (isMobile()) {
+    document.documentElement.style.setProperty("--hdr-bottom", $("header.top").getBoundingClientRect().bottom + 8 + "px");
+    setSheet(sheetState);
+  } else {
+    $(".side").style.height = ""; hideDetail();
+  }
+  map.invalidateSize();
+}
+MQ.addEventListener("change", () => { map.closePopup(); cur = null; layoutMobile(); });
+window.addEventListener("resize", () => { if (isMobile()) layoutMobile(); });
+
+function showDetail() {
+  $("#detailBody").innerHTML = placeHtml();
+  $("#detail").hidden = false; $(".side").classList.add("show-detail");
+  setSheet("half");
+  $("#detailBody").scrollTop = 0;
+}
+function hideDetail() {
+  $(".side").classList.remove("show-detail"); $("#detail").hidden = true;
+  if (isMobile() && cur) { cur = null; activeId = null; markActive(); restyleMarkers(); }
+}
+$("#detailBack").addEventListener("click", () => { hideDetail(); setSheet("half"); });
+/* 고른 곳이 패널에 가리지 않게: 검색 카드와 패널 사이 가운데로 */
+function centerAboveSheet(latlng) {
+  const top = $("header.top").getBoundingClientRect().bottom, bottom = window.innerHeight - (parseFloat($(".side").style.height) || 0);
+  const p = map.latLngToContainerPoint(latlng), targetY = (top + bottom) / 2;
+  map.panBy([0, p.y - targetY], { animate: true });
+}
+
+/* 패널 끌어올리기/내리기: 손잡이·요약줄을 끌거나, 누르면 단계 전환 */
+(() => {
+  let y0 = 0, h0 = 0, moved = false, dragging = false;
+  const start = (e) => {
+    if (!isMobile()) return;
+    dragging = true; moved = false; y0 = e.clientY; h0 = $(".side").offsetHeight;
+    $(".side").classList.add("dragging"); e.target.setPointerCapture?.(e.pointerId);
+  };
+  const move = (e) => {
+    if (!dragging) return;
+    const dy = y0 - e.clientY; if (Math.abs(dy) > 4) moved = true;
+    const H = sheetHeights();
+    setSheet(sheetState, Math.max(H.peek * 0.8, Math.min(H.full, h0 + dy)));
+  };
+  const end = () => {
+    if (!dragging) return;
+    dragging = false; $(".side").classList.remove("dragging");
+    const H = sheetHeights(), h = $(".side").offsetHeight;
+    if (!moved) return setSheet(sheetState === "peek" ? "half" : sheetState === "half" ? "full" : "peek");
+    const near = ["peek", "half", "full"].sort((a, b) => Math.abs(H[a] - h) - Math.abs(H[b] - h))[0];
+    setSheet(near);
+  };
+  for (const el of [$("#sheetHandle"), $("#summary")]) el.addEventListener("pointerdown", start);
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", end);
+  window.addEventListener("pointercancel", end);
+})();
+// 목록을 아래로 스크롤하다 맨 위에서 더 내리면 패널을 내리는 대신, 목록을 쓰기 시작하면 패널을 펼친다
+$("#list").addEventListener("scroll", () => { if (isMobile() && sheetState === "peek") setSheet("half"); }, { passive: true });
+
+/* 앱(안드로이드) 뒤로가기: 처리했으면 true → 앱이 종료되지 않는다 */
+window.appBack = () => {
+  const openTip = [...document.querySelectorAll(".tip")].find((t) => !t.hidden);
+  if (openTip) { openTip.hidden = true; return true; }
+  if (isMobile() && $(".side").classList.contains("show-detail")) { hideDetail(); setSheet("half"); return true; }
+  if (isMobile() && sheetState === "full") { setSheet("half"); return true; }
+  if (!isMobile() && cur) { map.closePopup(); return true; }
+  return false;
+};
+
+/* ===================== 휴대폰 브라우저 첫 화면: 웹으로 볼지, 앱을 설치할지 ===================== */
+(() => {
+  const ua = navigator.userAgent, android = /Android/i.test(ua), phone = /Android|iPhone|iPod|iPad/i.test(ua);
+  $("#gateApk").href = APK_URL; $("#apkLink").href = APK_URL;
+  $("#apkLink").hidden = !android || IN_APP;
+  if (!android) { $("#gateApk").hidden = true; $("#gateApkNote").textContent = "아이폰은 앱 설치 없이 웹으로 이용해요. 공유 버튼 → 「홈 화면에 추가」로 앱처럼 쓸 수 있어요."; }
+  if (!phone || IN_APP || store.get("mobileChoice")) return;
+  $("#gate").hidden = false;
+  $("#gateWeb").addEventListener("click", () => { store.set("mobileChoice", "web"); $("#gate").hidden = true; });
+  $("#gateApk").addEventListener("click", () => { store.set("mobileChoice", "app"); setTimeout(() => { $("#gate").hidden = true; }, 300); });
+})();
+
+/* ===================== 앱 업데이트 안내 =====================
+   화면·데이터는 사이트에서 바로 읽으니 깃에 올리면 앱에도 자동 반영된다.
+   앱 껍데기(APK)를 새로 만들었을 때만, 최신 릴리스 번호가 더 크면 설치 안내를 띄운다. */
+(async () => {
+  const m = /BabdojangApp\/(\d+)/.exec(navigator.userAgent); if (!m) return;
+  try {
+    const r = await fetch("https://api.github.com/repos/windyflower1219-design/Licensed-Restaurant/releases/latest", { cache: "no-cache" });
+    const latest = +(/(\d+)$/.exec((await r.json()).tag_name || "") || [])[1];
+    if (!latest || latest <= +m[1] || store.get("skipAppVersion") === latest) return;
+    const bar = document.createElement("div"); bar.className = "app-update";
+    bar.innerHTML = `<span>새 앱 버전이 있어요</span><a href="${APK_URL}">업데이트</a><button type="button" aria-label="닫기">×</button>`;
+    bar.querySelector("button").onclick = () => { store.set("skipAppVersion", latest); bar.remove(); };
+    document.body.appendChild(bar);
+  } catch {}
+})();
+
+layoutMobile();
 loadRemote();
 </script>
 </body>
