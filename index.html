@@ -44,7 +44,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.1px; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.1px; word-break: keep-all; overflow-wrap: break-word; }
+.nw, .pill, .floor, .verdict, .chip, .reviews a { white-space: nowrap; }
 /* 배경지도는 색을 빼서 차분하게 → 식당 점이 돋보이게 */
 .leaflet-tile-pane { filter: saturate(.18) brightness(1.04) contrast(.92); }
 button, input, select { font: inherit; color: inherit; }
@@ -126,9 +127,10 @@ input[type=search] { flex: 1; }
 .help-btn[aria-expanded="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 /* ? 버튼 옆에 뜨는 작은 말풍선 */
 .tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
-.tip { position: absolute; top: calc(100% + 6px); z-index: 1500; width: max-content; max-width: 240px; background: var(--panel); color: var(--ink);
+.tip { position: absolute; top: calc(100% + 6px); z-index: 1500; width: max-content; max-width: min(260px, calc(100vw - 32px)); background: var(--panel); color: var(--ink);
        border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 12px; line-height: 1.5; display: grid; gap: 6px; }
 .tip.right { right: 0; } .tip.left { left: 0; }
+#tipCaution { white-space: nowrap; max-width: none; }
 #cautionToggle[aria-pressed="false"] { color: var(--warn); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; box-sizing: border-box; }
@@ -152,7 +154,8 @@ input[type=search] { flex: 1; }
 @media (max-width: 760px) {
   .app { grid-template-columns: 1fr; grid-template-rows: 46vh 1fr; }
   #map { order: -1; }
-  .side { border-right: 0; border-top: 1px solid var(--line); }
+  .side { border-right: 0; border-top: 1px solid var(--line); overflow-y: auto; }
+  .list { flex: none; overflow: visible; }   /* 좁은 화면: 필터+목록을 패널 하나로 스크롤 */
   .pop .shops { max-height: max(110px, calc(46vh - 190px)); }
   .filters, .summary, .item, header.top { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 }
@@ -447,7 +450,7 @@ function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office
 function start() {
   $("#empty").hidden = true; $("#filters").hidden = false; $("#summary").hidden = false;
   const up = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(META.updated || "") ? String(META.updated).slice(0, 16).replace("T", " ") : String(META.updated || "-");
-  $("#stamp").textContent = `${up} 업데이트 · 영업 중 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳`;
+  $("#stamp").innerHTML = `<span class="nw">${esc(up)} 업데이트</span> · <span class="nw">영업 중 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳</span>`;
   computeDist();
   byPlace = new Map();
   for (const d of DATA) { const k = placeKey(d); if (!byPlace.has(k)) byPlace.set(k, []); byPlace.get(k).push(d); }
@@ -538,10 +541,10 @@ function render() {
     const fl = floorOf(d).label, same = groups.get(placeKey(d)).n;
     return `<div class="item${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}" tabindex="0" role="button">
       <div class="nm">${esc(d.name)}</div><div class="dist">${fmtDist(d.dist)}</div>
-      <div class="meta"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${colorOf(d.type)}"></span>${esc(d.type)}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}
+      <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(d.type)}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
-        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span>· 같은 건물 ${same}곳</span>` : ""}</div>
+        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 같은 건물 ${same}곳</span>` : ""}</div>
       <div class="ext reviews"><span class="rl">리뷰·메뉴</span>${mapLinks(d, "ext-a")}</div></div>`;
   }).join("") + (rows.length > listLimit ? `<button class="more" id="more" type="button">${(rows.length - listLimit).toLocaleString()}곳 더 보기</button>` : "")
     + (rows.length === 0 ? `<div class="empty"><p style="margin:0;color:var(--muted)">조건에 맞는 곳이 없습니다. 반경을 넓히거나(「전체」) 업태 선택을 해제해 보세요.</p></div>` : "");
@@ -606,7 +609,7 @@ function popupHtml(rows) {
   const d0 = rows[0];
   return `<div class="pop">
     <h3>같은 건물 ${rows.length}곳</h3>
-    <p class="bld">${esc(bldAddr(d0))} · ${fmtDist(d0.dist)} · 도보 약 ${walkMin(d0.dist)}분</p>
+    <p class="bld"><span class="nw">${esc(bldAddr(d0))}</span> · <span class="nw">${fmtDist(d0.dist)} · 도보 약 ${walkMin(d0.dist)}분</span></p>
     <div class="shops">${rows.map((d) => {
       const fl = floorOf(d).label;
       return `<div class="shop${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}">
