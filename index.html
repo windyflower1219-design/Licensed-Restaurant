@@ -162,6 +162,18 @@ input[type=search] { flex: 1; }
 .acts-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .btn.share { display: inline-flex; gap: 5px; align-items: center; }
 .btn.share svg { width: 13px; height: 13px; }
+/* 회사가 화면 밖일 때: 회사 쪽 가장자리에 붙어 따라다니는 '회사로' 버튼 */
+.office-nav { position: absolute; z-index: 800; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid #fff;
+  background: var(--office); color: #fff; box-shadow: 0 3px 10px rgba(16,24,40,.3); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.office-nav[hidden] { display: none; }
+.office-nav .bld { width: 18px; height: 18px; }
+.office-nav .arr { position: absolute; inset: -10px; pointer-events: none; transform: rotate(var(--a, 0deg)); }
+/* 반경 고르기(모바일): 작은 드롭다운 */
+.radius-btn { display: none; }
+.radius-menu { position: absolute; z-index: 1200; background: var(--panel); border-radius: 12px; padding: 4px; box-shadow: 0 6px 22px rgba(16,24,40,.2); display: grid; min-width: 96px; }
+.radius-menu button { background: none; border: 0; text-align: left; padding: 9px 12px; border-radius: 8px; font-size: 14px; }
+.radius-menu button[aria-selected="true"] { font-weight: 700; color: var(--ok); }
+.radius-menu button:active { background: var(--chip); }
 .type-legend { background: var(--panel); border-radius: 10px; padding: 7px 10px; box-shadow: 0 2px 10px rgba(16,24,40,.15); font: 12px/1.6 var(--font-body); color: var(--ink); display: grid; gap: 1px; }
 .type-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 0 1.5px #fff; }
 .empty-q { padding: 18px 16px; display: grid; gap: 6px; }
@@ -210,12 +222,15 @@ body.mobile .m-top .filters .label, body.mobile .m-top #setOffice, body.mobile .
 body.mobile .m-top .help-btn.sm, body.mobile .m-top #tipCaution, body.mobile .m-top .filters > div > .row { display: none !important; }
 body.mobile .m-top .chip, body.mobile .m-top select { flex: none; background: var(--panel); border: 0; border-radius: 999px; padding: 7px 13px; font-size: 13px;
   box-shadow: 0 1px 6px rgba(16,24,40,.16); }
-body.mobile .m-top select { order: -1; padding-right: 26px; appearance: none; -webkit-appearance: none;
+body.mobile .m-top select { display: none !important; }
+body.mobile .m-top .radius-btn { display: inline-flex; gap: 6px; align-items: center; order: -2; }
+body.mobile .m-top .radius-btn svg { width: 9px; height: 6px; color: var(--muted); }
+body.mobile .m-top select.unused { order: -1; padding-right: 26px; appearance: none; -webkit-appearance: none;
   background: var(--panel) right 10px center / 9px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7383' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); }
 body.mobile .m-top .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
 body.mobile .m-top .chip.zero:not([aria-pressed="true"]) { opacity: 1; color: var(--off); }
 .more-btn { display: none; }
-body.mobile .m-top .more-btn { display: inline-grid; place-items: center; order: -2; width: 34px; height: 33px; padding: 0 !important; }
+body.mobile .m-top .more-btn { display: inline-grid; place-items: center; order: -1; width: 34px; height: 33px; padding: 0 !important; }
 .more-btn svg { width: 12px; height: 12px; transition: transform .2s; }
 .more-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
 /* ▾ 누르면: 업태 전체·주의업종·회사 위치 */
@@ -245,6 +260,7 @@ body.mobile #detailBody .reviews .btn { padding: 7px 11px; font-size: 13px; }
 body.mobile .leaflet-control-zoom { display: none; }
 body.mobile .leaflet-top { top: var(--hdr-bottom, 120px); }
 body.mobile .leaflet-bottom { display: none; }
+body.mobile .type-legend { display: none !important; }   /* 화면이 작아 범례는 생략(고른 칩에 색 점이 있음) */
 body.mobile .tip { max-width: calc(100vw - 44px); }
 body.mobile .toast { bottom: calc(var(--sheet-h, 40vh) + 12px); }
 body.in-app header.top { top: 10px; }
@@ -279,6 +295,7 @@ body.in-app header.top { top: 10px; }
     <section class="filters" id="filters" hidden>
       <div class="row">
         <span class="label">회사에서</span>
+        <button class="chip radius-btn" id="radiusBtn" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="radiusLabel">500m</span><svg viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
         <select id="radius" aria-label="반경">
           <option value="300">300m</option>
           <option value="500" selected>500m</option>
@@ -305,7 +322,7 @@ body.in-app header.top { top: 10px; }
       </div>
     </section>
 
-    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span id="sortNote">회사에서 가까운 순</span></div>
+    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span id="sortNote">회사로부터의 거리</span></div>
     <div class="list" id="list"></div>
     <section class="detail" id="detail" hidden><button class="back" id="detailBack" type="button">‹ 목록으로</button><div id="detailBody"></div></section>
 
@@ -325,6 +342,7 @@ body.in-app header.top { top: 10px; }
 
 <!-- 모바일: 검색창 아래 떠 있는 버튼 줄(필터를 여기로 옮겨 씀)과 ▾ 업태 전체 패널 -->
 <div class="m-top" id="mTop">
+  <div class="radius-menu" id="radiusMenu" role="listbox" hidden></div>
   <div class="type-more" id="typeMore" hidden>
     <div class="tm-head"><b>업태</b><button class="linkbtn" id="typeNone2" type="button" hidden>선택 해제</button></div>
     <div class="chips" id="typeMoreChips"></div>
@@ -454,7 +472,8 @@ let groups = new Map();   // placeKey → { rows, marker } (현재 필터 결과
 let byPlace = new Map();  // placeKey → 그 건물의 모든 가게 (필터 무관, 팝업용)
 
 /* ---------- 지도 ---------- */
-const map = L.map("map", { preferCanvas: true, zoomControl: true }).setView([office.lat, office.lng], 16);
+const TOUCH = matchMedia("(pointer: coarse)").matches;
+const map = L.map("map", { renderer: L.canvas({ tolerance: TOUCH ? 12 : 3 }), zoomControl: true }).setView([office.lat, office.lng], 16);
 /* 배경지도: OpenStreetMap (웹서버에 올렸을 때 동작).
    CARTO basemaps는 이제 API 키가 없으면 "API KEY REQUIRED" 타일만 내려줘서 뺐다. */
 const BASES = {
@@ -469,13 +488,16 @@ const OFFICE_PIN = `<svg class="office-pin" viewBox="0 0 34 42" aria-hidden="tru
   <path fill="#fff" d="M11 25V11.5l7-2.5v16h-7zm8 0V14l5 1.6V25h-5zm-6-12v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm5 -2.4v1.8h1.4v-1.8zm0 3v1.8h1.4v-1.8z"/></svg>`;
 const officeMarker = L.marker([office.lat, office.lng], {
   icon: L.divIcon({ className: "", html: OFFICE_PIN, iconSize: [34, 42], iconAnchor: [17, 41] }),
-  zIndexOffset: 1000, title: OFFICE_DEFAULT.name, keyboard: false,
-}).addTo(map).bindPopup(() => `<div class="office-name">${esc(OFFICE_DEFAULT.name)}</div>`, { offset: [0, -34], minWidth: 0, className: "office-pop" });
+  zIndexOffset: 1000, title: "회사", keyboard: false,
+}).addTo(map).bindPopup(() => `<div class="office-name">회사</div>`, { offset: [0, -34], minWidth: 0, className: "office-pop" });
 const circle = L.circle([office.lat, office.lng], { radius: 500, color: getCss("--office"), weight: 1.2, opacity: 0.55, dashArray: "4 5", fillColor: getCss("--office"), fillOpacity: 0.035, interactive: false }).addTo(map);
 function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
 map.on("click", (e) => {
-  if (!pickingOffice) return;
+  if (!pickingOffice) {
+    if (isMobile() && ($(".side").classList.contains("show-detail") || sheetState !== "peek")) { hideDetail(); setSheet("peek"); }
+    return;
+  }
   office = { ...office, lat: +e.latlng.lat.toFixed(6), lng: +e.latlng.lng.toFixed(6) };
   store.set("office", office);
   officeMarker.setLatLng(e.latlng); circle.setLatLng(e.latlng);
@@ -611,6 +633,7 @@ function start() {
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
   $("#radius").value = String(store.get("radius", 500));
+  syncRadiusLabel();
   updateResetOffice();
   render();
   layoutMobile();
@@ -680,7 +703,7 @@ function render() {
   const rows = filtered();
   const q = $("#q").value.trim();
   $("#count").textContent = rows.length.toLocaleString();
-  $("#sortNote").textContent = q ? "강남구 전체 검색 · 가까운 순" : "회사에서 가까운 순";
+  $("#sortNote").textContent = q ? "강남구 전체 · 회사로부터의 거리" : "회사로부터의 거리";
   renderTypeLegend();
 
   // 같은 좌표(같은 건물)는 점 하나로 묶는다
@@ -696,7 +719,7 @@ function render() {
     g.n = buildingRows(k).length;
     const lead = g.rows[0];
     const active = g.rows.some((d) => d.id === activeId);
-    const m = L.circleMarker([lead.lat, lead.lng], markerStyle(lead, g.n, active));
+    const m = L.circleMarker([lead.lat, lead.lng], { ...markerStyle(lead, g.n, active), bubblingMouseEvents: false });
     // 지도에서 점을 누르면 건물 전체, 목록에서 가게를 누르면 그 가게만(openItem)
     m.on("click", () => openPlace(k, null));
     m._key = k; g.marker = m; m.addTo(layer);
@@ -776,7 +799,7 @@ function popupHtml(rows, total = rows.length, key = "") {
         <dt>업태</dt><dd>${esc(typeLabel(d.type))}</dd>
         <dt>규모</dt><dd>${sizeHtml(d)}</dd>
         <dt>전화</dt><dd class="mono">${telHtml(d)}</dd>
-        <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}${d.geo === "road" ? `<br><span class="hint">원본에 좌표가 없어 지도 위치는 도로 기준 대략입니다</span>` : ""}</dd>
+        <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}${d.geo === "road" ? `<br><span class="hint">좌표 데이터가 없어 도로 기준 대략적인 위치를 표시함</span>` : ""}</dd>
         <dt>거리</dt><dd>${fmtDist(d.dist)} · 도보 약 ${walkMin(d.dist)}분</dd>
       </dl>
       ${reviewsHtml(d, "btn")}
@@ -819,6 +842,8 @@ document.addEventListener("click", (e) => {
   if (sa && cur) { cur.focusId = null; refreshPlace(); return; }
   const sh = e.target.closest("[data-share]");
   if (sh) return shareShop(sh.dataset.share);
+  const shop = e.target.closest(".shop");
+  if (shop && cur && !e.target.closest("a, button")) { cur.focusId = shop.dataset.id; activeId = shop.dataset.id; refreshPlace(); restyleMarkers(); return; }
   const it = e.target.closest(".item");
   if (it) openItem(it.dataset.id);
 });
@@ -847,8 +872,8 @@ function openPlace(k, focusId) {
   restyleMarkers();
 }
 /* 점이 화면의 targetY 높이에 오도록, 확대·이동을 한 번의 부드러운 애니메이션으로 */
-function glideTo(latlng, targetY) {
-  const z = Math.max(map.getZoom(), 17), H = map.getSize().y;
+function glideTo(latlng, targetY, minZoom = 17) {
+  const z = Math.max(map.getZoom(), minZoom), H = map.getSize().y;
   const c = map.unproject(map.project(latlng, z).add([0, H / 2 - targetY]), z);
   const far = map.getCenter().distanceTo(c) > 1200;
   if (z !== map.getZoom() || far) map.flyTo(c, z, { duration: far ? 0.9 : 0.6, easeLinearity: 0.25 });
@@ -861,7 +886,7 @@ function placeHtml() {
 }
 function refreshPlace() {
   if (!cur) return;
-  if (isMobile()) $("#detailBody").innerHTML = placeHtml();
+  if (isMobile()) return showDetail();   // 내용 높이에 맞춰 패널 높이도 다시
   else sharedPopup.setContent(placeHtml());
   markActive(); scrollActiveShop();
 }
@@ -911,9 +936,64 @@ let qTimer; $("#q").addEventListener("input", () => {
 });
 $("#q").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); });
 $("#radius").addEventListener("change", () => {
-  store.set("radius", +$("#radius").value); listLimit = 200; render();
-  const r = +$("#radius").value; if (r) map.fitBounds(circle.getBounds(), { padding: [20, 20] });
+  store.set("radius", +$("#radius").value); listLimit = 200; render(); syncRadiusLabel();
+  const r = +$("#radius").value; if (!r) return;
+  const b = visibleBand();
+  map.fitBounds(circle.getBounds(), { paddingTopLeft: [20, b.top + 12], paddingBottomRight: [20, map.getSize().y - b.bottom + 12] });
 });
+const RADII = [["300", "300m"], ["500", "500m"], ["1000", "1km"], ["2000", "2km"], ["0", "전체"]];
+function syncRadiusLabel() { $("#radiusLabel").textContent = (RADII.find((x) => x[0] === $("#radius").value) || [0, "전체"])[1]; }
+function closeRadiusMenu() { $("#radiusMenu").hidden = true; $("#radiusBtn").setAttribute("aria-expanded", "false"); }
+$("#radiusBtn").addEventListener("click", () => {
+  const m = $("#radiusMenu");
+  if (!m.hidden) return closeRadiusMenu();
+  m.innerHTML = RADII.map(([v, t]) => `<button type="button" role="option" data-r="${v}" aria-selected="${$("#radius").value === v}">${t}</button>`).join("");
+  const br = $("#radiusBtn").getBoundingClientRect(), tr = $("#mTop").getBoundingClientRect();
+  m.style.left = Math.max(8, br.left) + "px"; m.style.top = br.bottom - tr.top + 6 + "px";
+  m.hidden = false; $("#radiusBtn").setAttribute("aria-expanded", "true");
+  $("#typeMore").hidden = true; syncMoreBtn();
+});
+$("#radiusMenu").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-r]"); if (!b) return;
+  $("#radius").value = b.dataset.r; $("#radius").dispatchEvent(new Event("change")); closeRadiusMenu();
+});
+document.addEventListener("click", (e) => { if (!e.target.closest("#radiusMenu, #radiusBtn")) closeRadiusMenu(); });
+$("#filters").addEventListener("scroll", closeRadiusMenu, { passive: true });
+
+/* 지도에서 UI에 가리지 않는 세로 구간(모바일: 위 버튼 줄 아래 ~ 아래 패널 위) */
+function visibleBand() {
+  const H = map.getSize().y;
+  if (!isMobile()) return { top: 0, bottom: H };
+  return { top: $("#mTop").getBoundingClientRect().bottom, bottom: H - (parseFloat($(".side").style.height) || 0) };
+}
+
+/* 회사가 화면 밖이면, 회사 방향의 화면 가장자리에 '회사로' 버튼을 붙여 따라다니게 한다 */
+const officeNav = L.DomUtil.create("button", "office-nav", map.getContainer());
+officeNav.type = "button"; officeNav.title = "회사로 돌아가기"; officeNav.setAttribute("aria-label", "회사로 돌아가기"); officeNav.hidden = true;
+officeNav.innerHTML = `<svg class="arr" viewBox="0 0 60 60" aria-hidden="true"><path d="M55 30l-6-4.5v9z" fill="var(--office)" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>`
+  + `<svg class="bld" viewBox="0 0 14 16" aria-hidden="true"><path fill="#fff" d="M1 15V3.5L7 1v14H1zm7 0V5.5l5 1.6V15H8zM3 4.5v1.6h1.4V4.5zm2 0v1.6h1.4V4.5zM3 7.5v1.6h1.4V7.5zm2 0v1.6h1.4V7.5zm-2 3v1.6h1.4v-1.6zm2 0v1.6h1.4v-1.6zm4.5-2v1.4h1.3V8.5zm0 2.6v1.4h1.3v-1.4z"/></svg>`;
+L.DomEvent.disableClickPropagation(officeNav);
+officeNav.addEventListener("click", () => {
+  const b = visibleBand();
+  glideTo([office.lat, office.lng], (b.top + b.bottom) / 2, Math.min(map.getZoom(), 16));
+});
+let navRaf = 0;
+function updateOfficeNav() {
+  cancelAnimationFrame(navRaf);
+  navRaf = requestAnimationFrame(() => {
+    const W = map.getSize().x, b = visibleBand(), m = 30;
+    const box = { l: m, r: W - m, t: b.top + m, bt: b.bottom - m };
+    const p = map.latLngToContainerPoint([office.lat, office.lng]);
+    const inside = p.x > 0 && p.x < W && p.y > b.top && p.y < b.bottom;
+    officeNav.hidden = inside || box.bt <= box.t;
+    if (officeNav.hidden) return;
+    const cx = (box.l + box.r) / 2, cy = (box.t + box.bt) / 2, dx = p.x - cx, dy = p.y - cy;
+    const k = Math.min(dx ? (dx > 0 ? box.r - cx : box.l - cx) / dx : Infinity, dy ? (dy > 0 ? box.bt - cy : box.t - cy) / dy : Infinity);
+    officeNav.style.left = cx + dx * k + "px"; officeNav.style.top = cy + dy * k + "px";
+    officeNav.style.setProperty("--a", Math.atan2(dy, dx) * 180 / Math.PI + "deg");
+  });
+}
+map.on("move zoom resize", updateOfficeNav);
 $("#setOffice").addEventListener("click", () => {
   pickingOffice = !pickingOffice;
   $("#setOffice").classList.toggle("on", pickingOffice);
@@ -936,6 +1016,7 @@ function setSheet(state, px) {
   const h = px ?? sheetHeights()[state];
   $(".side").style.height = h + "px";
   document.documentElement.style.setProperty("--sheet-h", h + "px");
+  updateOfficeNav();
 }
 function layoutMobile() {
   const m = isMobile();
@@ -1020,6 +1101,7 @@ window.appBack = () => {
   const openTip = [...document.querySelectorAll(".tip")].find((t) => !t.hidden);
   if (openTip) { openTip.hidden = true; return true; }
   if (!$("#typeMore").hidden) { $("#typeMore").hidden = true; syncMoreBtn(); return true; }
+  if (!$("#radiusMenu").hidden) { closeRadiusMenu(); return true; }
   if (isMobile() && $(".side").classList.contains("show-detail")) { hideDetail(); setSheet("half"); return true; }
   if (isMobile() && sheetState === "full") { setSheet("half"); return true; }
   if (!isMobile() && cur) { map.closePopup(); return true; }
