@@ -22,7 +22,7 @@ import android.webkit.WebViewClient;
  */
 public class MainActivity extends Activity {
     private static final String HOST = "windyflower1219-design.github.io";
-    private static final String HOME = "https://" + HOST + "/Licensed-Restaurant/?app=1";
+    private static final String HOME = "https://" + HOST + "/R-Dinner/?app=1";
     private static final long RELOAD_AFTER_MS = 60 * 60 * 1000L;   // 1시간 넘게 백그라운드였다가 돌아오면 새로 읽기
 
     private WebView web;
@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri u = req.getUrl();
                 String path = u.getPath() == null ? "" : u.getPath();
-                if ("https".equals(u.getScheme()) && HOST.equals(u.getHost()) && path.startsWith("/Licensed-Restaurant")) {
+                if ("https".equals(u.getScheme()) && HOST.equals(u.getHost()) && path.startsWith("/R-Dinner")) {
                     return false;   // 우리 사이트는 앱 안에서
                 }
                 openExternal(u);    // 카카오맵·네이버지도·구글지도·전화·APK 내려받기는 해당 앱으로

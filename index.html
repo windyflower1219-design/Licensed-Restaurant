@@ -351,8 +351,8 @@ body.in-app header.top { top: 10px; }
 /* ===== 설정: 회사 위치를 정확히 맞추려면 여기 좌표를 바꾸세요 ===== */
 const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
-const SITE_URL = "https://windyflower1219-design.github.io/Licensed-Restaurant/";   // 공유 링크 기준 주소
-const APK_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/releases/latest/download/rndinner.apk";
+const SITE_URL = "https://windyflower1219-design.github.io/R-Dinner/";   // 공유 링크 기준 주소
+const APK_URL = "https://github.com/windyflower1219-design/R-Dinner/releases/latest/download/rndinner.apk";
 const IN_APP = /RnDinnerApp/.test(navigator.userAgent) || new URLSearchParams(location.search).has("app");
 const MQ = matchMedia("(max-width: 760px)");
 const isMobile = () => MQ.matches;
@@ -1044,7 +1044,7 @@ window.appBack = () => {
 (async () => {
   const m = /RnDinnerApp\/(\d+)/.exec(navigator.userAgent); if (!m) return;
   try {
-    const r = await fetch("https://api.github.com/repos/windyflower1219-design/Licensed-Restaurant/releases/latest", { cache: "no-cache" });
+    const r = await fetch("https://api.github.com/repos/windyflower1219-design/R-Dinner/releases/latest", { cache: "no-cache" });
     const latest = +(/(\d+)$/.exec((await r.json()).tag_name || "") || [])[1];
     if (!latest || latest <= +m[1] || store.get("skipAppVersion") === latest) return;
     const bar = document.createElement("div"); bar.className = "app-update";

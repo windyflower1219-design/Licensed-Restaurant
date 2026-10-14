@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "restaurants.json"
 GEO_CACHE = ROOT / "data" / "geocode_cache.json"
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
-GEO_UA = "restaurant-map (https://github.com/windyflower1219-design/Licensed-Restaurant)"
+GEO_UA = "restaurant-map (https://github.com/windyflower1219-design/R-Dinner)"
 PAGE = 1000  # 서울 Open API 1회 최대 요청 건수
 # 데이터셋 페이지 「내려받기(CSV)」 버튼이 보내는 요청 (공식 API는 아니라 바뀌면 API로 넘어간다)
 CSV_URL = "https://datafile.seoul.go.kr/bigfile/iot/sheet/csv/download.do"
