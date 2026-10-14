@@ -144,11 +144,10 @@ input[type=search] { flex: 1; }
 .pop .shop .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .pop .shop b { font-size: 13.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 2000; }
-/* 회사: 건물 아이콘이 든 핀 */
+/* 회사: 건물 아이콘이 든 핀, 누르면 이름 팝업 */
+.office-pop .leaflet-popup-content { min-width: 0; margin: 10px 14px; }
 .office-pin { width: 34px; height: 42px; filter: drop-shadow(0 3px 4px rgba(16,24,40,.3)); }
 .office-pin .body { fill: var(--office); }
-.office-label { background: var(--office); color: #fff; border: 0; border-radius: 6px; padding: 2px 7px; font: 600 11.5px/1.4 var(--font-body); box-shadow: 0 2px 6px rgba(16,24,40,.2); }
-.office-label::before { display: none; }
 
 @media (max-width: 760px) {
   .app { grid-template-columns: 1fr; grid-template-rows: 46vh 1fr; }
@@ -233,7 +232,7 @@ input[type=search] { flex: 1; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
 <script>
 /* ===== 설정: 회사 위치를 정확히 맞추려면 여기 좌표를 바꾸세요 ===== */
-const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소 (삼성동 대화빌딩)", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
+const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
 
 /* ---------- 유틸 ---------- */
@@ -339,8 +338,8 @@ const OFFICE_PIN = `<svg class="office-pin" viewBox="0 0 34 42" aria-hidden="tru
   <path fill="#fff" d="M11 25V11.5l7-2.5v16h-7zm8 0V14l5 1.6V25h-5zm-6-12v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm5 -2.4v1.8h1.4v-1.8zm0 3v1.8h1.4v-1.8z"/></svg>`;
 const officeMarker = L.marker([office.lat, office.lng], {
   icon: L.divIcon({ className: "", html: OFFICE_PIN, iconSize: [34, 42], iconAnchor: [17, 41] }),
-  zIndexOffset: 1000, title: office.name, keyboard: false,
-}).addTo(map).bindTooltip("회사", { permanent: true, direction: "right", offset: [12, -24], className: "office-label" });
+  zIndexOffset: 1000, title: OFFICE_DEFAULT.name, keyboard: false,
+}).addTo(map).bindPopup(() => `<div class="pop"><h3 style="margin:0">${esc(OFFICE_DEFAULT.name)}</h3></div>`, { offset: [0, -34], minWidth: 0, className: "office-pop" });
 const circle = L.circle([office.lat, office.lng], { radius: 500, color: getCss("--office"), weight: 1.2, opacity: 0.55, dashArray: "4 5", fillColor: getCss("--office"), fillOpacity: 0.035, interactive: false }).addTo(map);
 function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
