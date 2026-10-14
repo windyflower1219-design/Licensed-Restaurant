@@ -734,7 +734,7 @@ function render() {
     return `<div class="item${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}" tabindex="0" role="button">
       <div class="nm">${esc(d.name)}</div><div class="dist">${fmtDist(d.dist)}</div>
       <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(typeLabel(d.type))}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
-        ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
+        ${isCaution(d) ? `<span class="pill caution">과제비 사용 주의</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
         <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 건물 내 식당 ${same}곳</span>` : ""}</div></div>`;
   }).join("") + (rows.length > listLimit ? `<button class="more" id="more" type="button">${(rows.length - listLimit).toLocaleString()}곳 더 보기</button>` : "")
