@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>과제비 식당 체크</title>
+<title>과제비 사용 가능 식당</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%231d7a4f%27/%3E%3Cpath d=%27M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
 <meta name="description" content="회사 근처 식당이 과제비로 써도 되는 일반음식점인지 지도에서 확인합니다. 서울 열린데이터광장 인허가 데이터 기준.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,7 +55,7 @@ button { cursor: pointer; }
 
 header.top { padding: 16px max(16px, env(safe-area-inset-left, 0px)) 12px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.seal { width: 30px; height: 30px; border: 2px solid var(--accent); color: var(--accent); border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 11px; letter-spacing: -0.5px; transform: rotate(-8deg); flex: none; }
+.logo { width: 28px; height: 28px; flex: none; }
 h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -0.2px; }
 .stamp-line { color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
 
@@ -119,7 +120,8 @@ input[type=search] { flex: 1; }
 #cautionToggle[aria-pressed="false"] { color: var(--warn); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
-.reviews { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.reviews { display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; white-space: nowrap; }
+.pop .reviews .btn { padding: 4px 8px; }
 .reviews .rl { font-size: 11.5px; color: var(--muted); margin-right: 2px; }
 /* 같은 건물 여러 곳: 지도 위 개수 표시 + 팝업 목록 */
 .cnt-icon { background: var(--ink); color: var(--panel); font: 600 10.5px/16px var(--font-mono); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; text-align: center; box-shadow: 0 0 0 1.5px var(--panel); }
@@ -146,15 +148,15 @@ input[type=search] { flex: 1; }
 <div class="app">
   <aside class="side">
     <header class="top">
-      <div class="brand"><div class="seal" aria-hidden="true">일반</div><h1>과제비 식당 체크</h1>
+      <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--ok)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg><h1>과제비 사용 가능 식당</h1>
         <button class="help-btn" id="helpBtn" type="button" aria-expanded="false" aria-controls="help" title="이용 안내">?</button></div>
       <div class="stamp-line" id="stamp">데이터 불러오는 중…</div>
       <div class="help" id="help" hidden>
-      <div class="hint">구청에 <b>일반음식점</b>으로 등록된 곳만 나옵니다. 지도에 없으면 일반음식점이 아닐 수 있어요. 호프·소주방 같은 주점성 업종은 기본으로 숨기고, 검색하면 경고와 함께 보여줍니다. 리뷰·메뉴·영업시간은 가게마다 있는 카카오맵·네이버지도·구글지도 버튼으로 확인하세요.</div>
+      <div class="hint">구청에 <b>일반음식점</b>으로 등록돼 영업 중인 곳만 나옵니다. 지도에 없으면 일반음식점이 아닐 수 있어요. 호프·소주방 같은 주점성 업종은 기본으로 숨기고, 검색하면 경고와 함께 보여줍니다. 업태를 고르면 고른 업태끼리 색으로 구분됩니다. 리뷰·메뉴는 가게마다 있는 카카오맵·네이버지도·구글지도 버튼으로 확인하세요.</div>
       <div class="legend" aria-label="범례">
-        <span><i style="background:#c2410c"></i>식사 (영업 중)</span>
-        <span><i style="border:2.5px solid var(--warn);background:#fff"></i>과제비 주의 (주점 등)</span>
-        <span><i style="border:2px solid var(--off);background:#fff"></i>휴업·폐업</span>
+        <span><i style="background:var(--ok)"></i>일반음식점</span>
+        <span><i style="border:2.5px solid var(--warn);background:#fff"></i>주점 등 주의</span>
+        <span><i style="border:1.5px dashed var(--ink);background:#fff"></i>대략 위치</span>
         <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물 여러 곳</span>
       </div>
       </div>
@@ -174,22 +176,20 @@ input[type=search] { flex: 1; }
           <option value="0">전체</option>
         </select>
         <button class="btn" id="setOffice" type="button">회사 위치 바꾸기</button>
-        <button class="btn" id="mapOnly" type="button" aria-pressed="false">지도에 보이는 곳만</button>
-      </div>
-      <div class="row">
-        <div class="chips" id="statusChips"></div>
-        <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종 <span class="n" id="cautionN"></span></button>
       </div>
       <div style="display:grid;gap:6px">
         <div class="row" style="justify-content:space-between">
-          <span class="label">업태</span>
-          <span><button class="linkbtn" id="typeAll" type="button">전체 선택</button> · <button class="linkbtn" id="typeNone" type="button">해제</button></span>
+          <span class="label">업태 <span style="text-transform:none;letter-spacing:0;font-weight:400">· 고르면 색으로 구분</span></span>
+          <button class="linkbtn" id="typeNone" type="button" hidden>선택 해제</button>
         </div>
         <div class="chips" id="typeChips"></div>
       </div>
+      <div class="row">
+        <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종도 보기 <span class="n" id="cautionN"></span></button>
+      </div>
     </section>
 
-    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span id="sortNote">회사에서 가까운 순</span></div>
+    <div class="summary" id="summary" hidden><span><b id="count">0</b>곳 표시</span><span>회사에서 가까운 순</span></div>
     <div class="list" id="list"></div>
 
     <section class="empty" id="empty" hidden>
@@ -213,8 +213,6 @@ input[type=search] { flex: 1; }
 /* ===== 설정: 회사 위치를 정확히 맞추려면 여기 좌표를 바꾸세요 ===== */
 const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소 (삼성동 대화빌딩)", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
-/* 데이터 갱신은 자동 실행 없이, 필요할 때 이 화면에서 Run workflow (저장소 관리자만 가능) */
-const UPDATE_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/actions/workflows/update-data.yml";
 
 /* ---------- 유틸 ---------- */
 const $ = (s) => document.querySelector(s);
@@ -235,15 +233,14 @@ function distM(a, b, c, d) {
 const fmtDist = (m) => (m < 1000 ? `${Math.round(m / 10) * 10}m` : `${(m / 1000).toFixed(1)}km`);
 const walkMin = (m) => Math.max(1, Math.round((m * 1.3) / 75)); // 직선거리×1.3, 분당 75m
 
-/* ---------- 업태 색 ---------- */
-const TYPE_COLORS = {
-  "한식": "#c2410c", "분식": "#db2777", "중국식": "#b91c1c", "일식": "#2563eb", "경양식": "#7c3aed",
-  "호프/통닭": "#ca8a04", "식육(숯불구이)": "#9a3412", "회집": "#0891b2", "뷔페식": "#16a34a",
-  "외국음식전문점(인도,태국등)": "#0d9488", "패밀리레스토랑": "#9333ea", "패스트푸드": "#e11d48",
-  "김밥(도시락)": "#be185d", "통닭(치킨)": "#d97706", "탕류(보신용)": "#78350f", "냉면집": "#0284c7",
-  "정종/대포집/소주방": "#475569", "감성주점": "#6d28d9", "까페": "#57534e", "라이브카페": "#57534e",
-};
-const colorOf = (t) => TYPE_COLORS[t] || "#64748b";
+/* ---------- 업태 색 ----------
+   업태가 20가지 넘어 색을 다 주면 구분이 안 된다. 평소엔 모두 같은 색(초록=일반음식점),
+   사용자가 업태를 고르면 고른 순서대로 서로 잘 구분되는 색을 준다. */
+const PICK_COLORS = ["#2563eb", "#dc2626", "#9333ea", "#0891b2", "#db2777", "#65a30d", "#92400e", "#1e3a8a"];
+function colorOf(t) {
+  if (!sel.types.has(t)) return getCss("--ok");
+  return PICK_COLORS[[...sel.types].indexOf(t) % PICK_COLORS.length];
+}
 
 /* ---------- 과제비 주의 업태: 일반음식점이지만 사실상 주점 ---------- */
 const CAUTION_TYPES = new Set(["호프/통닭", "정종/대포집/소주방", "감성주점", "라이브카페"]);
@@ -292,21 +289,14 @@ function statusClass(s) {
   if (/휴업|정지|중지/.test(s)) return "pause";
   return "open";
 }
-const STATUS = [
-  { key: "open", label: "영업 중", pill: "ok" },
-  { key: "pause", label: "휴업", pill: "warn" },
-  { key: "closed", label: "최근 폐업", pill: "off" },
-];
 
 /* ---------- 상태 ---------- */
 let DATA = [];        // {id,name,type,status,detail,road,jibun,tel,permit,closed,hygiene,area,lat,lng,sc}
 let META = {};
 let office = store.get("office", OFFICE_DEFAULT);
-const sel = {
-  types: new Set(store.get("types", [])),
-  status: new Set(store.get("status", ["open"])),
-};
-let pickingOffice = false, mapOnly = false, listLimit = 200, activeId = null;
+const sel = { types: new Set(store.get("types", [])) };
+let pickingOffice = false, listLimit = 200, activeId = null;
+let typeCounts = {}, typeOrder = [];
 let showCaution = store.get("showCaution", false);
 let groups = new Map();   // placeKey → { rows, marker } (현재 필터 결과 기준)
 let byPlace = new Map();  // placeKey → 그 건물의 모든 가게 (필터 무관, 팝업용)
@@ -338,7 +328,7 @@ map.on("click", (e) => {
   map.getContainer().style.cursor = "";
   computeDist(); render(); toast("회사 위치를 저장했습니다");
 });
-map.on("moveend", () => { if (mapOnly) render(); else drawCounts(); });
+map.on("moveend", drawCounts);
 
 /* ---------- 데이터 불러오기 ---------- */
 function fromRows(fields, rows) {
@@ -432,26 +422,19 @@ function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office
 
 function start() {
   $("#empty").hidden = true; $("#filters").hidden = false; $("#summary").hidden = false;
-  const got = META.updated ? String(META.updated).slice(0, 10) : "";
-  const src = META.sourceUpdated || got || "-";
-  const age = src && src !== "-" ? Math.floor((Date.now() - new Date(src + "T00:00:00+09:00")) / 864e5) : 0;
-  $("#stamp").innerHTML = `원본 기준 ${esc(src)}${age >= 7 ? ` <span style="color:var(--warn)">(${age}일 전)</span>` : ""}`
-    + ` · 일반음식점 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳 영업 중`
-    + ` · <a href="${UPDATE_URL}" target="_blank" rel="noopener" title="${got ? `마지막으로 받은 날 ${got}. ` : ""}관리자: Run workflow를 누르면 최신 데이터로 갱신">업데이트</a>`;
+  const up = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(META.updated || "") ? String(META.updated).slice(0, 16).replace("T", " ") : String(META.updated || "-");
+  $("#stamp").textContent = `${up} 업데이트 · 영업 중 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳`;
   computeDist();
   byPlace = new Map();
   for (const d of DATA) { const k = placeKey(d); if (!byPlace.has(k)) byPlace.set(k, []); byPlace.get(k).push(d); }
 
   // 업태 칩(식사 업태만): 반경 2km 안 기준 개수로 정렬
-  const near = DATA.filter((d) => d.dist < 2000);
+  const near = DATA.filter((d) => d.dist < 2000 && d.sc === "open");
   const base = near.length ? near : DATA;
-  const cnt = {}; for (const d of base) if (!isCaution(d)) cnt[d.type] = (cnt[d.type] || 0) + 1;
-  const types = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
-  for (const t of [...sel.types]) if (!cnt[t]) sel.types.delete(t);
-  $("#typeChips").innerHTML = types.map((t) =>
-    `<button type="button" class="chip" data-type="${esc(t)}" aria-pressed="${sel.types.has(t)}"><span class="dot" style="background:${colorOf(t)}"></span>${esc(t)}<span class="n">${cnt[t]}</span></button>`).join("");
-  $("#statusChips").innerHTML = STATUS.map((s) =>
-    `<button type="button" class="chip" data-status="${s.key}" aria-pressed="${sel.status.has(s.key)}">${s.label}</button>`).join("");
+  typeCounts = {}; for (const d of base) if (!isCaution(d)) typeCounts[d.type] = (typeCounts[d.type] || 0) + 1;
+  typeOrder = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a]);
+  for (const t of [...sel.types]) if (!typeCounts[t]) sel.types.delete(t);
+  renderTypeChips();
 
   const cc = {}; for (const d of base) if (isCaution(d)) cc[d.type] = (cc[d.type] || 0) + 1;
   $("#cautionN").textContent = Object.values(cc).reduce((a, b) => a + b, 0);
@@ -463,28 +446,34 @@ ${[...CAUTION_TYPES].map((t) => `${t} ${cc[t] || 0}곳`).join(", ")}`;
   render();
 }
 
+/* 업태 칩: 고른 칩에만 그 업태의 지도 색 점을 보여준다 */
+function renderTypeChips() {
+  $("#typeChips").innerHTML = typeOrder.map((t) => {
+    const on = sel.types.has(t);
+    return `<button type="button" class="chip" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(t)}<span class="n">${typeCounts[t]}</span></button>`;
+  }).join("");
+  $("#typeNone").hidden = !sel.types.size;
+}
+
 function filtered() {
   const q = $("#q").value.trim().toLowerCase();
   const r = +$("#radius").value;
-  const b = mapOnly ? map.getBounds() : null;
   return DATA.filter((d) =>
-    sel.status.has(d.sc) &&
+    d.sc === "open" &&
     // 주의 업태는 토글을 켰거나 검색했을 때만. 식사 업태는 칩 선택을 따른다.
     (isCaution(d) ? (showCaution || q) : (!sel.types.size || sel.types.has(d.type))) &&
     (!r || d.dist <= r) &&
-    (!q || (d.name + " " + d.road + " " + d.jibun).toLowerCase().includes(q)) &&
-    (!b || b.contains([d.lat, d.lng]))
+    (!q || (d.name + " " + d.road + " " + d.jibun).toLowerCase().includes(q))
   ).sort((a, b) => a.dist - b.dist);
 }
 
-/* 마커 대표: 영업 중 식사 > 주의 업태 > 휴·폐업 */
-const rank = (d) => (d.sc !== "open" ? 2 : isCaution(d) ? 1 : 0);
+/* 같은 건물에서 대표로 보일 가게: 식사 업태 먼저, 주의 업태는 뒤로 */
+const rank = (d) => (isCaution(d) ? 1 : 0);
 const byRankFloor = (a, b) => rank(a) - rank(b) || floorOf(a).n - floorOf(b).n;
-/* 팝업에는 검색·업태 필터와 상관없이 그 건물의 가게를 모두 보여준다(영업상태 선택만 따름) */
-const buildingRows = (k) => (byPlace.get(k) || []).filter((d) => sel.status.has(d.sc)).sort(byRankFloor);
+/* 팝업에는 검색·업태 필터와 상관없이 그 건물의 영업 중 가게를 모두 보여준다 */
+const buildingRows = (k) => (byPlace.get(k) || []).filter((d) => d.sc === "open").sort(byRankFloor);
 function markerStyle(d, n, active) {
   const radius = (active ? 9 : 6) + (n > 1 ? 1.5 : 0);
-  if (d.sc !== "open") return { radius, weight: 2, color: getCss("--off"), fillColor: "#ffffff", fillOpacity: 0.7 };
   if (isCaution(d)) return { radius, weight: 2.5, color: getCss("--warn"), fillColor: "#ffffff", fillOpacity: 0.9 };
   return { radius, weight: n > 1 ? 2 : 1, color: n > 1 ? getCss("--ink") : "#ffffff", fillColor: colorOf(d.type), fillOpacity: 0.9,
            ...(d.geo === "road" ? { color: getCss("--ink"), weight: 1.5, dashArray: "2 3", fillOpacity: 0.55 } : {}) };
@@ -495,7 +484,6 @@ function render() {
   circle.setRadius(r || 0); circle.setStyle({ opacity: r ? 1 : 0, fillOpacity: r ? 0.04 : 0 });
   const rows = filtered();
   $("#count").textContent = rows.length.toLocaleString();
-  $("#sortNote").textContent = mapOnly ? "지금 보이는 지도 안 · 가까운 순" : "회사에서 가까운 순";
 
   // 같은 좌표(같은 건물)는 점 하나로 묶는다
   groups = new Map();
@@ -523,16 +511,14 @@ function render() {
   const list = $("#list");
   const shown = rows.slice(0, listLimit);
   list.innerHTML = shown.map((d) => {
-    const st = STATUS.find((s) => s.key === d.sc);
     const fl = floorOf(d).label, same = groups.get(placeKey(d)).n;
     return `<div class="item${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}" tabindex="0" role="button">
       <div class="nm">${esc(d.name)}</div><div class="dist">${fmtDist(d.dist)}</div>
       <div class="meta"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:${colorOf(d.type)}"></span>${esc(d.type)}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
-        ${d.sc !== "open" ? `<span class="pill ${st.pill}">${esc(st.label)}</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
         <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span>· 같은 건물 ${same}곳</span>` : ""}</div>
-      <div class="ext reviews"><span class="rl">리뷰·메뉴 보기</span>${mapLinks(d, "ext-a")}</div></div>`;
+      <div class="ext reviews"><span class="rl">리뷰·메뉴</span>${mapLinks(d, "ext-a")}</div></div>`;
   }).join("") + (rows.length > listLimit ? `<button class="more" id="more" type="button">${(rows.length - listLimit).toLocaleString()}곳 더 보기</button>` : "")
     + (rows.length === 0 ? `<div class="empty"><p style="margin:0;color:var(--muted)">조건에 맞는 곳이 없습니다. 반경을 넓히거나(「전체」) 업태 선택을 해제해 보세요.</p></div>` : "");
   $("#more")?.addEventListener("click", () => { listLimit += 300; render(); });
@@ -563,8 +549,6 @@ function scrollActiveShop() {
 }
 
 function verdictHtml(d) {
-  if (d.sc === "closed") return `<span class="verdict no">폐업${d.closed ? ` ${esc(d.closed)}` : ""}</span>`;
-  if (d.sc === "pause") return `<span class="verdict no">${esc(d.status || "휴업")}</span>`;
   if (isCaution(d)) return `<span class="verdict warn">⚠ 주점성 업태 · 과제비 사용 주의</span>`;
   return `<span class="verdict">일반음식점 · 영업 중</span>`;
 }
@@ -577,7 +561,7 @@ function sizeHtml(d) {
   return z ? `<span title="${z.hint}">${z.text}</span> <span class="hint">${z.hint}</span>` : `<span class="hint">정보 없음</span>`;
 }
 function reviewsHtml(d, cls) {
-  return `<div class="reviews"><span class="rl">리뷰·메뉴·영업시간</span>${mapLinks(d, cls)}</div>`;
+  return `<div class="reviews"><span class="rl">리뷰·메뉴</span>${mapLinks(d, cls)}</div>`;
 }
 
 function popupHtml(rows) {
@@ -604,7 +588,7 @@ function popupHtml(rows) {
       return `<div class="shop${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}">
         <div class="top"><b>${esc(d.name)}</b>${fl ? `<span class="floor">${fl}</span>` : ""}<span class="hint">${esc(d.type)}</span></div>
         <div class="hint">${sizeOf(d) ? `<span title="${sizeOf(d).hint}">${sizeOf(d).text}</span> · ` : ""}${fmtTel(d.tel) ? `<a href="tel:${fmtTel(d.tel).replace(/-/g, "")}">${fmtTel(d.tel)}</a>` : "전화 미등록"}</div>
-        ${d.sc === "open" && !isCaution(d) ? "" : `<div>${verdictHtml(d)}</div>`}
+        ${isCaution(d) ? `<div>${verdictHtml(d)}</div>` : ""}
         ${reviewsHtml(d, "ext-a")}</div>`;
     }).join("")}</div></div>`;
 }
@@ -625,9 +609,7 @@ function mapLinks(d, cls) {
 /* ---------- 이벤트 ---------- */
 document.addEventListener("click", (e) => {
   const tc = e.target.closest("[data-type]");
-  if (tc) { const t = tc.dataset.type; sel.types.has(t) ? sel.types.delete(t) : sel.types.add(t); tc.setAttribute("aria-pressed", sel.types.has(t)); store.set("types", [...sel.types]); listLimit = 200; return render(); }
-  const sc = e.target.closest("[data-status]");
-  if (sc) { const s = sc.dataset.status; sel.status.has(s) ? sel.status.delete(s) : sel.status.add(s); sc.setAttribute("aria-pressed", sel.status.has(s)); store.set("status", [...sel.status]); return render(); }
+  if (tc) { const t = tc.dataset.type; sel.types.has(t) ? sel.types.delete(t) : sel.types.add(t); store.set("types", [...sel.types]); listLimit = 200; renderTypeChips(); return render(); }
   if (e.target.closest(".reviews a")) return;
   const it = e.target.closest(".item");
   if (it) openItem(it.dataset.id);
@@ -640,8 +622,7 @@ function openItem(id) {
   groups.get(placeKey(d))?.marker?.openPopup();
 }
 
-$("#typeAll").addEventListener("click", () => { document.querySelectorAll("[data-type]").forEach((b) => { sel.types.add(b.dataset.type); b.setAttribute("aria-pressed", "true"); }); store.set("types", [...sel.types]); render(); });
-$("#typeNone").addEventListener("click", () => { sel.types.clear(); document.querySelectorAll("[data-type]").forEach((b) => b.setAttribute("aria-pressed", "false")); store.set("types", []); render(); });
+$("#typeNone").addEventListener("click", () => { sel.types.clear(); store.set("types", []); renderTypeChips(); render(); });
 $("#helpBtn").addEventListener("click", () => {
   const open = $("#help").hidden; $("#help").hidden = !open; $("#helpBtn").setAttribute("aria-expanded", open);
 });
@@ -659,10 +640,6 @@ $("#setOffice").addEventListener("click", () => {
   $("#setOffice").classList.toggle("on", pickingOffice);
   $("#setOffice").textContent = pickingOffice ? "지도에서 회사 위치를 누르세요" : "회사 위치 바꾸기";
   map.getContainer().style.cursor = pickingOffice ? "crosshair" : "";
-});
-$("#mapOnly").addEventListener("click", () => {
-  mapOnly = !mapOnly; $("#mapOnly").setAttribute("aria-pressed", mapOnly);
-  $("#mapOnly").classList.toggle("on", mapOnly); render();
 });
 
 loadRemote();

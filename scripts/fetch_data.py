@@ -10,7 +10,7 @@
   SEOUL_CSV       (선택) 데이터셋ID:개방자치단체코드, 쉼표로 여러 개. 기본: OA-18674:3220000 (강남구)
   SEOUL_API_KEY   (선택) CSV 실패 시 쓰는 서울 열린데이터광장 일반 인증키
   SEOUL_SERVICES  (선택) API 서비스명. 기본: LOCALDATA_072404_GN (강남구)
-  KEEP_CLOSED_DAYS (선택) 최근 N일 안에 폐업한 곳도 남김(폐업 확인용). 기본 365
+  KEEP_CLOSED_DAYS (선택) 최근 N일 안에 폐업한 곳도 남김. 기본 0 (페이지는 영업 중만 보여줌)
   GEOCODE_MINUTES (선택) 좌표 없는 곳을 주소로 찾는 데 쓸 최대 시간(분). 0이면 안 찾음. 기본 40
                   결과는 data/geocode_cache.json 에 쌓여 다음부터는 새 주소만 조회한다.
 
@@ -312,7 +312,7 @@ def source_date(raw):
 
 
 def main():
-    keep_days = int(os.environ.get("KEEP_CLOSED_DAYS", "365"))
+    keep_days = int(os.environ.get("KEEP_CLOSED_DAYS", "0"))
     if len(sys.argv) == 3 and sys.argv[1] == "--csv":
         services = ["CSV(직접 업로드)"]
         raw = read_csv(sys.argv[2])
