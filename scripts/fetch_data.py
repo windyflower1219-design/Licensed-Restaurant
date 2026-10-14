@@ -12,7 +12,9 @@
 실행
   pip install pyproj
   SEOUL_API_KEY=xxxx python scripts/fetch_data.py
+  python scripts/fetch_data.py --csv 받은파일.csv   # 열린데이터광장에서 내려받은 CSV로 만들기(키 불필요)
 """
+import csv
 import datetime as dt
 import json
 import os
@@ -47,7 +49,7 @@ ALIASES = {
     "name": ["BPLCNM", "사업장명"],
     "type": ["UPTAENM", "업태구분명"],
     "status": ["TRDSTATENM", "영업상태명"],
-    "status_code": ["TRDSTATEGBN", "영업상태구분코드"],
+    "status_code": ["TRDSTATEGBN", "영업상태구분코드", "영업상태코드"],
     "detail": ["DTLSTATENM", "상세영업상태명"],
     "road": ["RDNWHLADDR", "도로명전체주소", "도로명주소"],
     "jibun": ["SITEWHLADDR", "소재지전체주소", "지번주소"],
@@ -58,7 +60,7 @@ ALIASES = {
     "area": ["FACILTOTSCP", "시설총규모"],
     "x": ["X", "좌표정보(X)", "좌표정보X(EPSG5174)", "좌표정보(x)"],
     "y": ["Y", "좌표정보(Y)", "좌표정보Y(EPSG5174)", "좌표정보(y)"],
-    "modified": ["LASTMODTS", "최종수정시점", "데이터갱신일자", "UPDATEDT"],
+    "modified": ["LASTMODTS", "최종수정시점", "최종수정일자", "데이터갱신일자", "UPDATEDT"],
 }
 
 
@@ -176,16 +178,31 @@ def convert(raw_rows, keep_closed_days):
     return out, no_xy
 
 
-def main():
-    key = os.environ.get("SEOUL_API_KEY", "").strip()
-    if not key:
-        sys.exit("SEOUL_API_KEY 환경변수가 없습니다.")
-    services = [s.strip() for s in os.environ.get("SEOUL_SERVICES", "LOCALDATA_072404_GN").split(",") if s.strip()]
-    keep_days = int(os.environ.get("KEEP_CLOSED_DAYS", "365"))
+def read_csv(path):
+    """열린데이터광장 CSV(보통 CP949, 가끔 UTF-8). 깨진 바이트가 한두 개 섞여 있어 replace로 읽는다."""
+    data = Path(path).read_bytes()
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = data.decode("cp949", errors="replace")
+    rows = list(csv.DictReader(text.splitlines()))
+    print(f"[CSV] {Path(path).name}: {len(rows):,}건", flush=True)
+    return rows
 
-    raw = []
-    for svc in services:
-        raw.extend(fetch_service(key, svc))
+
+def main():
+    keep_days = int(os.environ.get("KEEP_CLOSED_DAYS", "365"))
+    if len(sys.argv) == 3 and sys.argv[1] == "--csv":
+        services = ["CSV"]
+        raw = read_csv(sys.argv[2])
+    else:
+        key = os.environ.get("SEOUL_API_KEY", "").strip()
+        if not key:
+            sys.exit("SEOUL_API_KEY 환경변수가 없습니다. (CSV로 만들려면 --csv 파일경로)")
+        services = [s.strip() for s in os.environ.get("SEOUL_SERVICES", "LOCALDATA_072404_GN").split(",") if s.strip()]
+        raw = []
+        for svc in services:
+            raw.extend(fetch_service(key, svc))
     rows, no_xy = convert(raw, keep_days)
     n_open = sum(1 for r in rows if "폐업" not in r[3])
     note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 좌표 없음/범위 밖 {no_xy:,}건 제외")
