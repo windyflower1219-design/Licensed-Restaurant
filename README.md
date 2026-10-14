@@ -7,7 +7,7 @@
 
 | 파일 | 역할 |
 |---|---|
-| `index.html` | 지도 페이지 (Leaflet + CARTO/OpenStreetMap 배경지도, API 키 불필요) |
+| `index.html` | 지도 페이지 (Leaflet + OpenStreetMap 배경지도, API 키 불필요) |
 | `scripts/fetch_data.py` | 서울 Open API 호출 → 좌표 변환(EPSG:5174 → WGS84) → `data/restaurants.json` 저장 |
 | `.github/workflows/update-data.yml` | 매일 06:30(KST)에 위 스크립트를 실행하고 바뀐 데이터를 커밋 |
 
@@ -29,7 +29,7 @@
 
 ## 회사 위치
 
-`index.html` 상단의 `OFFICE_DEFAULT` 좌표가 기본값입니다. **현재 값은 삼성동 대략 위치이니 대화빌딩 실제 좌표로 바꿔 주세요.**
+`index.html` 상단의 `OFFICE_DEFAULT` 좌표가 기본값입니다. 현재 값은 대화빌딩(강남구 영동대로96길 20) 좌표입니다.
 페이지에서 「회사 위치 바꾸기」 → 지도 클릭으로도 바꿀 수 있고, 이 값은 각자 브라우저에 저장됩니다.
 
 ## 페이지 기능
@@ -64,4 +64,4 @@ SEOUL_API_KEY=발급받은키 python scripts/fetch_data.py
 python -m http.server 8000   # http://localhost:8000 접속
 ```
 
-데이터 출처: 서울 열린데이터광장 일반음식점 인허가 정보 (공공누리 제1유형) · 지도: © OpenStreetMap contributors, © CARTO
+데이터 출처: 서울 열린데이터광장 일반음식점 인허가 정보 (공공누리 제1유형) · 지도: © OpenStreetMap contributors

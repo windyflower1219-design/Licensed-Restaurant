@@ -16,6 +16,7 @@
 import datetime as dt
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -80,13 +81,24 @@ def ymd(s):
     return f"{s[:4]}-{s[4:6]}-{s[6:8]}" if len(s) == 8 and s.isdigit() else ""
 
 
+class ApiError(RuntimeError):
+    pass
+
+
 def call(key, service, start, end, retries=4):
     url = f"http://openapi.seoul.go.kr:8088/{key}/json/{service}/{start}/{end}/"
     last = None
     for i in range(retries):
         try:
             with urllib.request.urlopen(url, timeout=60) as r:
-                return json.loads(r.read().decode("utf-8"))
+                text = r.read().decode("utf-8")
+            # 인증키 오류 등은 /json/ 요청이어도 XML <RESULT>로 온다 → 재시도 없이 바로 중단
+            if text.lstrip().startswith("<"):
+                code = re.search(r"<CODE>(.*?)</CODE>", text, re.S)
+                msg = re.search(r"<MESSAGE>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</MESSAGE>", text, re.S)
+                raise ApiError(f"{service}: {code and code.group(1)} "
+                               f"{msg and ' '.join(msg.group(1).split())}")
+            return json.loads(text)
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
             last = e
             time.sleep(3 * (i + 1))
