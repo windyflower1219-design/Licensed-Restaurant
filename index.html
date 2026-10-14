@@ -6,45 +6,47 @@
 <title>과제비 사용 가능 식당</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%231d7a4f%27/%3E%3Cpath d=%27M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
 <meta name="description" content="회사 근처 식당이 과제비로 써도 되는 일반음식점인지 지도에서 확인합니다. 서울 열린데이터광장 인허가 데이터 기준.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 /* 레이아웃: 왼쪽 조회 패널(필터 → 목록) + 오른쪽 지도. 모바일에서는 지도 위, 패널 아래. */
 :root {
-  --bg: #f4f6f5;
+  --bg: #f5f6f8;
   --panel: #ffffff;
-  --ink: #18211e;
-  --muted: #5d6b66;
-  --line: #dde3e0;
-  --chip: #eef2f0;
-  --accent: #b3261e;        /* 인허가 도장색 */
+  --ink: #1d2433;
+  --muted: #6b7383;
+  --line: #e7e9ee;
+  --chip: #f2f4f7;
+  --accent: #0e9f6e;        /* 브랜드: 일반음식점 = 초록 */
   --accent-ink: #ffffff;
-  --ok: #1d7a4f;
-  --warn: #a86400;
-  --off: #8a9590;
-  --office: #1f4fd1;
-  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --ok: #0e9f6e;
+  --warn: #e08a00;
+  --off: #9aa1ad;
+  --office: #2b3a55;
+  --font-body: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: var(--font-body);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f1412; --panel: #171e1b; --ink: #e6ece9; --muted: #95a39d; --line: #2a3430;
-    --chip: #212a26; --accent: #e5534b; --accent-ink: #1a0b0a; --ok: #4cc38a; --warn: #e0a64a;
-    --off: #6b7873; --office: #7aa2ff; color-scheme: dark;
+    --bg: #12151b; --panel: #1a1e26; --ink: #e8ebf0; --muted: #9aa2b1; --line: #2b313c;
+    --chip: #232833; --accent: #34d399; --accent-ink: #062b1e; --ok: #34d399; --warn: #f5b041;
+    --off: #6b7280; --office: #a5b4fc; color-scheme: dark;
   }
+  :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) saturate(.25) brightness(.85); }
 }
 :root[data-theme="dark"] {
-  --bg: #0f1412; --panel: #171e1b; --ink: #e6ece9; --muted: #95a39d; --line: #2a3430;
-  --chip: #212a26; --accent: #e5534b; --accent-ink: #1a0b0a; --ok: #4cc38a; --warn: #e0a64a;
-  --off: #6b7873; --office: #7aa2ff; color-scheme: dark;
+  --bg: #12151b; --panel: #1a1e26; --ink: #e8ebf0; --muted: #9aa2b1; --line: #2b313c;
+  --chip: #232833; --accent: #34d399; --accent-ink: #062b1e; --ok: #34d399; --warn: #f5b041;
+  --off: #6b7280; --office: #a5b4fc; color-scheme: dark;
 }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) saturate(.25) brightness(.85); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; letter-spacing: -0.1px; }
+/* 배경지도는 색을 빼서 차분하게 → 식당 점이 돋보이게 */
+.leaflet-tile-pane { filter: saturate(.18) brightness(1.04) contrast(.92); }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -56,16 +58,18 @@ button { cursor: pointer; }
 header.top { padding: 16px max(16px, env(safe-area-inset-left, 0px)) 12px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .logo { width: 28px; height: 28px; flex: none; }
-h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -0.2px; }
-.stamp-line { color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -0.4px; }
+.stamp-line { color: var(--muted); font-size: 12px; }
 
 .filters { padding: 12px 16px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.6px; text-transform: uppercase; }
-input[type=search], select, input[type=number] { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 0; }
+input[type=search], select, input[type=number] { background: var(--chip); border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; min-width: 0; }
+input[type=search]:focus { background: var(--panel); border-color: var(--line); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 input[type=search] { flex: 1; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 132px; overflow-y: auto; }
-.chip { border: 1px solid var(--line); background: var(--chip); border-radius: 999px; padding: 3px 10px 3px 8px; font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; }
+.chip { border: 1px solid transparent; background: var(--chip); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; transition: background .15s; }
+.chip:hover { background: color-mix(in srgb, var(--ink) 8%, var(--chip)); }
 .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
 .chip .n { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
@@ -88,7 +92,8 @@ input[type=search] { flex: 1; }
 .pop .acts a.btn { color: var(--ink); }
 .more { width: 100%; padding: 10px; background: none; border: 0; color: var(--muted); }
 
-.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 6px 10px; font-size: 12.5px; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; }
+.btn:hover { background: var(--chip); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .btn.on { outline: 2px solid var(--office); }
 
@@ -100,7 +105,9 @@ input[type=search] { flex: 1; }
 .drop.over { border-color: var(--accent); color: var(--ink); }
 
 /* 지도 팝업 */
-.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); box-shadow: 0 8px 28px rgba(16,24,40,.16); }
+.leaflet-popup-content-wrapper { border-radius: 12px; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 .leaflet-popup-content { margin: 12px 14px; font: 13px/1.5 var(--font-body); min-width: 240px; }
 .pop h3 { margin: 0 0 4px; font-size: 15px; }
 .pop dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0; font-size: 12.5px; }
@@ -108,9 +115,9 @@ input[type=search] { flex: 1; }
 .pop .mono { font-family: var(--font-mono); font-size: 12px; }
 .pop .acts { display: flex; gap: 6px; flex-wrap: wrap; }
 .pop .acts a { text-decoration: none; color: inherit; }
-.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 4px; padding: 1px 6px; }
-.verdict.no { color: var(--off); border-color: var(--off); }
-.verdict.warn { color: var(--warn); border-color: var(--warn); }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 11.5px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 999px; padding: 2px 9px; }
+.verdict.no { color: var(--off); background: var(--chip); }
+.verdict.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
 .pill.caution { color: var(--warn); font-weight: 600; }
 .floor { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); background: var(--chip); border-radius: 4px; padding: 0 5px; }
 .hint { color: var(--muted); font-size: 12px; }
@@ -124,12 +131,12 @@ input[type=search] { flex: 1; }
 .tip.right { right: 0; } .tip.left { left: 0; }
 #cautionToggle[aria-pressed="false"] { color: var(--warn); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; box-sizing: border-box; }
 .reviews { display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; white-space: nowrap; }
 .pop .reviews .btn { padding: 4px 8px; }
 .reviews .rl { font-size: 11.5px; color: var(--muted); margin-right: 2px; }
 /* 같은 건물 여러 곳: 지도 위 개수 표시 + 팝업 목록 */
-.cnt-icon { background: var(--ink); color: var(--panel); font: 600 10.5px/16px var(--font-mono); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; text-align: center; box-shadow: 0 0 0 1.5px var(--panel); }
+.cnt-icon { background: var(--panel); color: var(--ink); font: 700 10px/15px var(--font-body); min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(16,24,40,.25); }
 .pop .bld { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
 .pop .shops { max-height: 280px; overflow-y: auto; margin: 0 -14px; border-top: 1px solid var(--line); }
 .pop .shop { padding: 8px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
@@ -137,7 +144,11 @@ input[type=search] { flex: 1; }
 .pop .shop .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .pop .shop b { font-size: 13.5px; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 2000; }
-.office-icon { width: 18px; height: 18px; background: var(--office); border: 3px solid var(--panel); border-radius: 4px; box-shadow: 0 0 0 1px var(--office); transform: rotate(45deg); }
+/* 회사: 건물 아이콘이 든 핀 */
+.office-pin { width: 34px; height: 42px; filter: drop-shadow(0 3px 4px rgba(16,24,40,.3)); }
+.office-pin .body { fill: var(--office); }
+.office-label { background: var(--office); color: #fff; border: 0; border-radius: 6px; padding: 2px 7px; font: 600 11.5px/1.4 var(--font-body); box-shadow: 0 2px 6px rgba(16,24,40,.2); }
+.office-label::before { display: none; }
 
 @media (max-width: 760px) {
   .app { grid-template-columns: 1fr; grid-template-rows: 46vh 1fr; }
@@ -159,9 +170,9 @@ input[type=search] { flex: 1; }
           <div class="tip right" id="tipHelp" hidden>
             <div>구청 인허가상 <b>영업 중인 일반음식점</b>만 표시해요. 최종 판단은 회사 규정을 따르세요.</div>
             <div class="legend" aria-label="범례">
-              <span><i style="background:var(--ok)"></i>일반음식점</span>
-              <span><i style="border:2.5px solid var(--warn);background:#fff"></i>주점 등 주의</span>
-              <span><i style="border:1.5px dashed var(--ink);background:#fff"></i>대략 위치</span>
+              <span><i style="background:var(--ok);box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(16,24,40,.15)"></i>일반음식점</span>
+              <span><i style="border:2px solid var(--warn);background:#fff"></i>주점 등 주의</span>
+              <span><i style="border:1.5px dashed var(--ok);background:color-mix(in srgb,var(--ok) 35%,#fff)"></i>대략 위치</span>
               <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물</span>
             </div>
           </div>
@@ -323,11 +334,14 @@ const baseName = (n => BASES[n] ? n : "기본 지도")(store.get("base", "기본
 BASES[baseName].addTo(map);
 const layer = L.layerGroup().addTo(map);
 const countLayer = L.layerGroup().addTo(map);   // 같은 건물 개수 표시 (확대했을 때만)
+const OFFICE_PIN = `<svg class="office-pin" viewBox="0 0 34 42" aria-hidden="true">
+  <path class="body" d="M17 41c-1-1.6-14-15.4-14-24.5C3 8.4 9.3 2 17 2s14 6.4 14 14.5C31 25.6 18 39.4 17 41z" stroke="#fff" stroke-width="2"/>
+  <path fill="#fff" d="M11 25V11.5l7-2.5v16h-7zm8 0V14l5 1.6V25h-5zm-6-12v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm-2.6 3.4v2h1.6v-2zm2.6 0v2h1.6v-2zm5 -2.4v1.8h1.4v-1.8zm0 3v1.8h1.4v-1.8z"/></svg>`;
 const officeMarker = L.marker([office.lat, office.lng], {
-  icon: L.divIcon({ className: "", html: '<div class="office-icon"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
-  zIndexOffset: 1000, title: office.name,
-}).addTo(map).bindTooltip(() => esc(office.name), { direction: "top", offset: [0, -10] });
-const circle = L.circle([office.lat, office.lng], { radius: 500, color: getCss("--office"), weight: 1.5, fillOpacity: 0.04, interactive: false }).addTo(map);
+  icon: L.divIcon({ className: "", html: OFFICE_PIN, iconSize: [34, 42], iconAnchor: [17, 41] }),
+  zIndexOffset: 1000, title: office.name, keyboard: false,
+}).addTo(map).bindTooltip("회사", { permanent: true, direction: "right", offset: [12, -24], className: "office-label" });
+const circle = L.circle([office.lat, office.lng], { radius: 500, color: getCss("--office"), weight: 1.2, opacity: 0.55, dashArray: "4 5", fillColor: getCss("--office"), fillOpacity: 0.035, interactive: false }).addTo(map);
 function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
 map.on("click", (e) => {
@@ -449,8 +463,7 @@ function start() {
 
   const cc = {}; for (const d of base) if (isCaution(d)) cc[d.type] = (cc[d.type] || 0) + 1;
   $("#cautionN").textContent = Object.values(cc).reduce((a, b) => a + b, 0);
-  $("#tipCaution").innerHTML = `<div>일반음식점이지만 사실상 <b>주점</b>이라 과제비로 쓰기 곤란한 업태예요. 평소엔 숨기고, 검색하면 경고와 함께 나와요.</div>`
-    + `<div class="hint">${[...CAUTION_TYPES].map((t) => `${esc(t)} ${cc[t] || 0}`).join(" · ")}</div>`;
+  $("#tipCaution").textContent = "호프, 정종, 대포집, 소주방, 감성주점, 라이브카페";
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
   $("#radius").value = String(store.get("radius", 500));
@@ -484,15 +497,16 @@ const byRankFloor = (a, b) => rank(a) - rank(b) || floorOf(a).n - floorOf(b).n;
 /* 팝업에는 검색·업태 필터와 상관없이 그 건물의 영업 중 가게를 모두 보여준다 */
 const buildingRows = (k) => (byPlace.get(k) || []).filter((d) => d.sc === "open").sort(byRankFloor);
 function markerStyle(d, n, active) {
-  const radius = (active ? 9 : 6) + (n > 1 ? 1.5 : 0);
-  if (isCaution(d)) return { radius, weight: 2.5, color: getCss("--warn"), fillColor: "#ffffff", fillOpacity: 0.9 };
-  return { radius, weight: n > 1 ? 2 : 1, color: n > 1 ? getCss("--ink") : "#ffffff", fillColor: colorOf(d.type), fillOpacity: 0.9,
-           ...(d.geo === "road" ? { color: getCss("--ink"), weight: 1.5, dashArray: "2 3", fillOpacity: 0.55 } : {}) };
+  const radius = active ? 8 : n > 1 ? 6 : 4.5;
+  if (isCaution(d)) return { radius, weight: 2, color: getCss("--warn"), fillColor: "#ffffff", fillOpacity: 1, dashArray: null };
+  const c = colorOf(d.type);
+  if (d.geo === "road") return { radius, weight: 1.5, color: c, dashArray: "2 2", fillColor: c, fillOpacity: 0.35 };
+  return { radius, weight: active ? 2.5 : 1.5, color: "#ffffff", fillColor: c, fillOpacity: 1, dashArray: null };
 }
 
 function render() {
   const r = +$("#radius").value;
-  circle.setRadius(r || 0); circle.setStyle({ opacity: r ? 1 : 0, fillOpacity: r ? 0.04 : 0 });
+  circle.setRadius(r || 0); circle.setStyle({ opacity: r ? 0.55 : 0, fillOpacity: r ? 0.035 : 0 });
   const rows = filtered();
   $("#count").textContent = rows.length.toLocaleString();
 
