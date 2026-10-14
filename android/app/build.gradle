@@ -25,6 +25,9 @@ android {
                 storePassword System.getenv('KEYSTORE_PASSWORD')
                 keyAlias System.getenv('KEY_ALIAS')   // CI가 키에서 읽어 넘겨준다
                 keyPassword System.getenv('KEYSTORE_PASSWORD')
+                // 일부 기기·설치 앱 호환을 위해 예전 방식(v1) 서명도 함께
+                enableV1Signing true
+                enableV2Signing true
             }
         }
     }

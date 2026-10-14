@@ -188,26 +188,52 @@ input[type=search] { flex: 1; }
    전체 화면 지도 + 위쪽 떠 있는 검색 카드 + 아래에서 올라오는 패널(목록·가게 상세). */
 body.mobile .app { display: block; height: 100%; }
 body.mobile #map { position: fixed !important; inset: 0; height: auto; }   /* Leaflet이 처음에 position:relative를 직접 넣어서 !important */
+/* 위: 한 줄 검색창(로고·검색·?) — 네이버·카카오맵처럼 지도를 최대한 덜 가리게 */
 body.mobile header.top { position: fixed; z-index: 1100; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 10px; right: 10px;
-  background: var(--panel); border: 0; border-radius: 16px; padding: 10px 12px 12px; box-shadow: 0 4px 18px rgba(16,24,40,.14); gap: 6px; }
-body.mobile .brand { gap: 8px; }
-body.mobile .logo { width: 24px; height: 24px; }
-body.mobile h1 { font-size: 15px; }
-body.mobile .stamp-line { font-size: 11px; margin-top: -3px; }
+  background: var(--panel); border: 0; border-radius: 14px; padding: 6px 8px 6px 10px; box-shadow: 0 2px 12px rgba(16,24,40,.16);
+  display: flex; align-items: center; gap: 8px; }
+body.mobile .brand { display: contents; }
+body.mobile .logo { width: 26px; height: 26px; order: 1; }
+body.mobile h1, body.mobile header.top > .stamp-line { display: none; }
+body.mobile header.top > .row { order: 2; flex: 1; min-width: 0; }
+body.mobile header.top .tip-wrap { order: 3; margin-left: 0 !important; }
+body.mobile #q { background: transparent; padding: 9px 4px; font-size: 15px; }
+body.mobile #q:focus { box-shadow: none; border-color: transparent; }
+body.mobile .tip-stamp { display: block !important; }
+/* 검색창 아래: 지도 위에 떠 있는 버튼 한 줄 [▾][반경][업태 4개][주의업종] */
+.m-top { display: none; }
+body.mobile .m-top { display: block; position: fixed; z-index: 1090; left: 0; right: 0; top: var(--hdr-bottom-raw, 72px); }
+body.mobile .m-top .filters { display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; gap: 6px; padding: 8px 10px; border: 0; background: none; scrollbar-width: none; }
+body.mobile .m-top .filters::-webkit-scrollbar { display: none; }
+body.mobile .m-top .filters > .row, body.mobile .m-top .filters > div, body.mobile .m-top #typeChips, body.mobile .m-top .tip-wrap { display: contents !important; }   /* 업태 칸의 인라인 display:grid를 이기도록 */
+body.mobile .m-top .filters .label, body.mobile .m-top #setOffice, body.mobile .m-top #resetOffice, body.mobile .m-top #typeNone,
+body.mobile .m-top .help-btn.sm, body.mobile .m-top #tipCaution, body.mobile .m-top .filters > div > .row { display: none !important; }
+body.mobile .m-top .chip, body.mobile .m-top select { flex: none; background: var(--panel); border: 0; border-radius: 999px; padding: 7px 13px; font-size: 13px;
+  box-shadow: 0 1px 6px rgba(16,24,40,.16); }
+body.mobile .m-top select { order: -1; padding-right: 26px; appearance: none; -webkit-appearance: none;
+  background: var(--panel) right 10px center / 9px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7383' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); }
+body.mobile .m-top .chip[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+body.mobile .m-top .chip.zero:not([aria-pressed="true"]) { opacity: 1; color: var(--off); }
+.more-btn { display: none; }
+body.mobile .m-top .more-btn { display: inline-grid; place-items: center; order: -2; width: 34px; height: 33px; padding: 0 !important; }
+.more-btn svg { width: 12px; height: 12px; transition: transform .2s; }
+.more-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+/* ▾ 누르면: 업태 전체·주의업종·회사 위치 */
+.type-more { margin: 0 10px; background: var(--panel); border-radius: 16px; padding: 14px; box-shadow: 0 6px 24px rgba(16,24,40,.18); display: grid; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.type-more .tm-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.type-more .chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; max-height: none; }
+.type-more .chip { padding: 7px 12px; font-size: 13px; }
+.type-more .tm-note { font-size: 12px; color: var(--muted); }
+.type-more .tm-acts { display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px; }
 body.mobile .side { position: fixed; z-index: 1050; left: 0; right: 0; bottom: 0; height: 40vh; border: 0; border-radius: 18px 18px 0 0;
   box-shadow: 0 -4px 22px rgba(16,24,40,.14); overflow: hidden; transition: height .25s ease; padding-bottom: env(safe-area-inset-bottom, 0px); }
 body.mobile .side.dragging { transition: none; }
 body.mobile .sheet-handle { display: grid; place-items: center; height: 22px; flex: none; cursor: grab; touch-action: none; }
 body.mobile .sheet-handle span { width: 38px; height: 4px; border-radius: 2px; background: var(--line); }
-body.mobile .filters { padding: 0 14px 10px; gap: 8px; border: 0; }
-body.mobile .filters .label { display: none; }
-body.mobile .chips { flex-wrap: nowrap; overflow-x: auto; max-height: none; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
-body.mobile .chips::-webkit-scrollbar { display: none; }
-body.mobile .chip { padding: 6px 12px; font-size: 13px; }
-body.mobile .summary { padding: 8px 14px; touch-action: none; }
+body.mobile .summary { padding: 4px 16px 12px; touch-action: none; border-bottom: 1px solid var(--line); }
 body.mobile .item { padding: 12px 16px; }
 body.mobile .item .nm { font-size: 15px; }
-body.mobile .side.show-detail .filters, body.mobile .side.show-detail .summary, body.mobile .side.show-detail .list { display: none; }
+body.mobile .side.show-detail .summary, body.mobile .side.show-detail .list { display: none; }
 body.mobile .side.show-detail .detail { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 body.mobile .detail .back { align-self: flex-start; background: none; border: 0; color: var(--muted); font-size: 13px; padding: 0 16px 6px; }
 body.mobile #detailBody { overflow-y: auto; padding: 0 16px 16px; flex: 1; min-height: 0; }
@@ -217,7 +243,7 @@ body.mobile #detailBody .pop .shops { max-height: none; margin: 0 -16px; }
 body.mobile #detailBody .pop .shop { padding: 10px 16px; }
 body.mobile #detailBody .reviews .btn { padding: 7px 11px; font-size: 13px; }
 body.mobile .leaflet-control-zoom { display: none; }
-body.mobile .leaflet-top { top: var(--hdr-bottom, 130px); }
+body.mobile .leaflet-top { top: var(--hdr-bottom, 120px); }
 body.mobile .leaflet-bottom { display: none; }
 body.mobile .tip { max-width: calc(100vw - 44px); }
 body.mobile .toast { bottom: calc(var(--sheet-h, 40vh) + 12px); }
@@ -241,6 +267,7 @@ body.in-app header.top { top: 10px; }
               <span><i style="border:1.5px dashed var(--ok);background:color-mix(in srgb,var(--ok) 35%,#fff)"></i>대략 위치</span>
               <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물</span>
             </div>
+            <div class="hint tip-stamp" id="tipStamp" style="display:none"></div>
             <a class="hint" id="apkLink" href="#" hidden style="text-decoration:underline">안드로이드 앱 설치</a>
           </div>
         </span></div>
@@ -294,6 +321,16 @@ body.in-app header.top { top: 10px; }
     </section>
   </aside>
   <div id="map" role="region" aria-label="지도"></div>
+</div>
+
+<!-- 모바일: 검색창 아래 떠 있는 버튼 줄(필터를 여기로 옮겨 씀)과 ▾ 업태 전체 패널 -->
+<div class="m-top" id="mTop">
+  <div class="type-more" id="typeMore" hidden>
+    <div class="tm-head"><b>업태</b><button class="linkbtn" id="typeNone2" type="button" hidden>선택 해제</button></div>
+    <div class="chips" id="typeMoreChips"></div>
+    <div class="tm-note">주의업종: 호프, 정종, 대포집, 소주방, 감성주점, 라이브카페</div>
+    <div class="tm-acts"><button class="btn" type="button" data-act="setOffice">회사 위치 바꾸기</button><button class="linkbtn" type="button" data-act="resetOffice" id="resetOffice2" hidden>원래 위치로</button></div>
+  </div>
 </div>
 
 <!-- 휴대폰 브라우저로 처음 들어왔을 때: 모바일 웹 / 앱 설치 선택 -->
@@ -447,11 +484,11 @@ map.on("click", (e) => {
   computeDist(); render(); updateResetOffice(); toast("회사 위치를 저장했습니다");
 });
 function updateResetOffice() {
-  $("#resetOffice").hidden = office.lat === OFFICE_DEFAULT.lat && office.lng === OFFICE_DEFAULT.lng;
+  $("#resetOffice").hidden = $("#resetOffice2").hidden = office.lat === OFFICE_DEFAULT.lat && office.lng === OFFICE_DEFAULT.lng;
 }
 map.on("moveend", drawCounts);
 /* 데스크톱 팝업은 하나를 돌려쓴다(모바일은 아래 패널에 상세를 띄움) */
-const sharedPopup = L.popup({ maxWidth: 340, minWidth: 260 });
+const sharedPopup = L.popup({ maxWidth: 340, minWidth: 260, autoPan: false });   // 위치는 glideTo가 맞춘다(두 번 움직이지 않게)
 map.on("popupclose", (e) => { if (e.popup === sharedPopup) cur = null; });
 
 /* 선택한 업태 범례: 업태를 고르면 지도 구석에 색과 이름을 보여준다 */
@@ -559,6 +596,7 @@ function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office
 function start() {
   $("#empty").hidden = true; $("#filters").hidden = false; $("#summary").hidden = false;
   const up = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(META.updated || "") ? String(META.updated).slice(0, 16).replace("T", " ") : String(META.updated || "-");
+  $("#tipStamp").textContent = `${up} 업데이트`;
   $("#stamp").innerHTML = `<span class="nw">${esc(up)} 업데이트</span> · <span class="nw">영업 중 ${DATA.filter((d) => d.sc === "open" && !isCaution(d)).length.toLocaleString()}곳</span>`;
   computeDist();
   byPlace = new Map();
@@ -593,11 +631,21 @@ function countTypes() {
 }
 
 function renderTypeChips() {
-  $("#typeChips").innerHTML = typeOrder.map((t) => {
+  const chip = (t) => {
     const on = sel.types.has(t), n = typeCounts[t] || 0;
     return `<button type="button" class="chip${n ? "" : " zero"}" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(typeLabel(t))}<span class="n">${n}</span></button>`;
-  }).join("");
-  $("#typeNone").hidden = !sel.types.size;
+  };
+  if (isMobile()) {
+    // 휴대폰: 많이 쓰는 4개만 보이고(고른 업태는 항상 앞에), 나머지는 ▾ 버튼의 패널에서
+    const top = typeOrder.slice(0, 4), extra = typeOrder.filter((t) => sel.types.has(t) && !top.includes(t));
+    const open = !$("#typeMore").hidden;
+    $("#typeChips").innerHTML = `<button type="button" class="chip more-btn" id="typeMoreBtn" aria-expanded="${open}" aria-label="업태 더 보기"><svg viewBox="0 0 12 12"><path d="M2 4l4 4.5L10 4z" fill="currentColor"/></svg></button>`
+      + [...extra, ...top].map(chip).join("");
+    $("#typeMoreChips").innerHTML = typeOrder.map(chip).join("");
+  } else {
+    $("#typeChips").innerHTML = typeOrder.map(chip).join("");
+  }
+  $("#typeNone").hidden = $("#typeNone2").hidden = !sel.types.size;
 }
 
 function filtered() {
@@ -788,16 +836,23 @@ function openPlace(k, focusId) {
   const d = all.find((x) => x.id === activeId) || all[0];
   if (isMobile()) {
     showDetail();
-    map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17), { animate: false });
-    centerAboveSheet([d.lat, d.lng]);
+    const top = $("#mTop").getBoundingClientRect().bottom, bottom = window.innerHeight - (parseFloat($(".side").style.height) || 0);
+    glideTo([d.lat, d.lng], (top + bottom) / 2);
   } else {
-    map.setView([d.lat, d.lng], Math.max(map.getZoom(), 17));
+    glideTo([d.lat, d.lng], map.getSize().y * 0.64);   // 팝업이 점 위로 뜨니 점은 화면 아래쪽에
     sharedPopup.setLatLng([d.lat, d.lng]).setContent(placeHtml());
     if (!map.hasLayer(sharedPopup)) sharedPopup.openOn(map);
-    sharedPopup.options.cur = cur;
   }
   markActive(); scrollActiveShop();
   restyleMarkers();
+}
+/* 점이 화면의 targetY 높이에 오도록, 확대·이동을 한 번의 부드러운 애니메이션으로 */
+function glideTo(latlng, targetY) {
+  const z = Math.max(map.getZoom(), 17), H = map.getSize().y;
+  const c = map.unproject(map.project(latlng, z).add([0, H / 2 - targetY]), z);
+  const far = map.getCenter().distanceTo(c) > 1200;
+  if (z !== map.getZoom() || far) map.flyTo(c, z, { duration: far ? 0.9 : 0.6, easeLinearity: 0.25 });
+  else map.panTo(c, { animate: true, duration: 0.45, easeLinearity: 0.25 });
 }
 function placeHtml() {
   const all = buildingRows(cur.k);
@@ -864,15 +919,16 @@ $("#setOffice").addEventListener("click", () => {
   $("#setOffice").classList.toggle("on", pickingOffice);
   $("#setOffice").textContent = pickingOffice ? "지도에서 회사 위치를 누르세요" : "회사 위치 바꾸기";
   map.getContainer().style.cursor = pickingOffice ? "crosshair" : "";
+  if (pickingOffice && isMobile()) toast("지도에서 회사 위치를 누르세요");
 });
 
 /* ===================== 모바일: 아래 패널(시트) ===================== */
 let sheetState = "peek";
 function sheetHeights() {
   const vh = window.innerHeight;
-  const hdr = $("header.top").getBoundingClientRect().bottom;
-  const peekParts = ["#sheetHandle", "#filters", "#summary"].map((s) => $(s)?.offsetHeight || 0).reduce((a, b) => a + b, 0);
-  return { peek: Math.min(peekParts + 76, vh * 0.45), half: Math.round(vh * 0.52), full: Math.round(vh - hdr - 8) };
+  const top = $("#mTop").getBoundingClientRect().bottom;
+  const peek = ($("#sheetHandle").offsetHeight || 22) + ($("#summary").offsetHeight || 40);
+  return { peek, half: Math.round(vh * 0.48), full: Math.round(vh - top - 6) };
 }
 function setSheet(state, px) {
   if (!isMobile()) return;
@@ -882,10 +938,19 @@ function setSheet(state, px) {
   document.documentElement.style.setProperty("--sheet-h", h + "px");
 }
 function layoutMobile() {
-  document.body.classList.toggle("mobile", isMobile());
+  const m = isMobile();
+  document.body.classList.toggle("mobile", m);
   document.body.classList.toggle("in-app", IN_APP);
-  if (isMobile()) {
-    document.documentElement.style.setProperty("--hdr-bottom", $("header.top").getBoundingClientRect().bottom + 8 + "px");
+  // 필터를 모바일은 검색창 아래 떠 있는 줄로, 데스크톱은 왼쪽 패널로 옮긴다(같은 요소라 이벤트 그대로)
+  const f = $("#filters");
+  if (m && f.parentElement !== $("#mTop")) $("#mTop").prepend(f);
+  if (!m && f.parentElement !== $(".side")) $("#sheetHandle").after(f);
+  if (!m) $("#typeMore").hidden = true;
+  if (DATA.length) renderTypeChips();
+  if (m) {
+    const r = document.documentElement.style;
+    r.setProperty("--hdr-bottom-raw", $("header.top").getBoundingClientRect().bottom + "px");
+    r.setProperty("--hdr-bottom", $("#filters").getBoundingClientRect().bottom + 4 + "px");
     setSheet(sheetState);
   } else {
     $(".side").style.height = ""; hideDetail();
@@ -898,7 +963,10 @@ window.addEventListener("resize", () => { if (isMobile()) layoutMobile(); });
 function showDetail() {
   $("#detailBody").innerHTML = placeHtml();
   $("#detail").hidden = false; $(".side").classList.add("show-detail");
-  setSheet("half");
+  $("#typeMore").hidden = true; syncMoreBtn();
+  // 가게 하나면 내용 높이만큼만 올려 지도를 덜 가린다(최대 화면의 62%)
+  const need = $("#sheetHandle").offsetHeight + $("#detailBack").offsetHeight + $("#detailBody").scrollHeight + 8;
+  setSheet("half", Math.min(need, Math.round(window.innerHeight * 0.62)));
   $("#detailBody").scrollTop = 0;
 }
 function hideDetail() {
@@ -906,12 +974,16 @@ function hideDetail() {
   if (isMobile() && cur) { cur = null; activeId = null; markActive(); restyleMarkers(); }
 }
 $("#detailBack").addEventListener("click", () => { hideDetail(); setSheet("half"); });
-/* 고른 곳이 패널에 가리지 않게: 검색 카드와 패널 사이 가운데로 */
-function centerAboveSheet(latlng) {
-  const top = $("header.top").getBoundingClientRect().bottom, bottom = window.innerHeight - (parseFloat($(".side").style.height) || 0);
-  const p = map.latLngToContainerPoint(latlng), targetY = (top + bottom) / 2;
-  map.panBy([0, p.y - targetY], { animate: true });
-}
+/* ▾ 업태 더 보기 패널 */
+function syncMoreBtn() { $("#typeMoreBtn")?.setAttribute("aria-expanded", !$("#typeMore").hidden); }
+document.addEventListener("click", (e) => {
+  if (!isMobile()) return;
+  if (e.target.closest("#typeMoreBtn")) { $("#typeMore").hidden = !$("#typeMore").hidden; return syncMoreBtn(); }
+  const act = e.target.closest("[data-act]");
+  if (act) { $("#typeMore").hidden = true; syncMoreBtn(); return $("#" + act.dataset.act).click(); }
+  if (!$("#typeMore").hidden && e.target.isConnected && !e.target.closest("#typeMore")) { $("#typeMore").hidden = true; syncMoreBtn(); }
+});
+$("#typeNone2").addEventListener("click", () => $("#typeNone").click());
 
 /* 패널 끌어올리기/내리기: 손잡이·요약줄을 끌거나, 누르면 단계 전환 */
 (() => {
@@ -947,6 +1019,7 @@ $("#list").addEventListener("scroll", () => { if (isMobile() && sheetState === "
 window.appBack = () => {
   const openTip = [...document.querySelectorAll(".tip")].find((t) => !t.hidden);
   if (openTip) { openTip.hidden = true; return true; }
+  if (!$("#typeMore").hidden) { $("#typeMore").hidden = true; syncMoreBtn(); return true; }
   if (isMobile() && $(".side").classList.contains("show-detail")) { hideDetail(); setSheet("half"); return true; }
   if (isMobile() && sheetState === "full") { setSheet("half"); return true; }
   if (!isMobile() && cur) { map.closePopup(); return true; }
