@@ -206,7 +206,7 @@ input[type=search] { flex: 1; }
       </div>
       <div class="row">
         <span class="tip-wrap">
-          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종도 보기 <span class="n" id="cautionN"></span></button>
+          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종 <span class="n" id="cautionN"></span></button>
           <button class="help-btn sm" type="button" data-tip="tipCaution" aria-expanded="false" aria-label="주의업종 설명">?</button>
           <div class="tip left" id="tipCaution" hidden></div>
         </span>
@@ -269,6 +269,9 @@ function colorOf(t) {
 /* ---------- 과제비 주의 업태: 일반음식점이지만 사실상 주점 ---------- */
 const CAUTION_TYPES = new Set(["호프/통닭", "정종/대포집/소주방", "감성주점", "라이브카페"]);
 const isCaution = (d) => CAUTION_TYPES.has(d.type);
+/* 화면에 보이는 업태 이름만 다듬는다(필터·저장값은 원래 이름 그대로) */
+const TYPE_LABELS = { "외국음식전문점(인도,태국등)": "외국음식전문점(인도, 태국 등)" };
+const typeLabel = (t) => TYPE_LABELS[t] || t;
 
 /* 도로명주소에서 층 뽑기: "…20-7, 지상2층 (대치동)" → "2층", "지하1층" → "B1" */
 function floorOf(d) {
@@ -476,7 +479,7 @@ function start() {
 function renderTypeChips() {
   $("#typeChips").innerHTML = typeOrder.map((t) => {
     const on = sel.types.has(t);
-    return `<button type="button" class="chip" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(t)}<span class="n">${typeCounts[t]}</span></button>`;
+    return `<button type="button" class="chip" data-type="${esc(t)}" aria-pressed="${on}">${on ? `<span class="dot" style="background:${colorOf(t)};box-shadow:0 0 0 1.5px var(--panel)"></span>` : ""}${esc(typeLabel(t))}<span class="n">${typeCounts[t]}</span></button>`;
   }).join("");
   $("#typeNone").hidden = !sel.types.size;
 }
@@ -541,7 +544,7 @@ function render() {
     const fl = floorOf(d).label, same = groups.get(placeKey(d)).n;
     return `<div class="item${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}" tabindex="0" role="button">
       <div class="nm">${esc(d.name)}</div><div class="dist">${fmtDist(d.dist)}</div>
-      <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(d.type)}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
+      <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(typeLabel(d.type))}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
         <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 같은 건물 ${same}곳</span>` : ""}</div>
@@ -598,7 +601,7 @@ function popupHtml(rows) {
       <h3>${esc(d.name)}</h3>
       ${verdictHtml(d)}
       <dl>
-        <dt>업태</dt><dd>${esc(d.type)}</dd>
+        <dt>업태</dt><dd>${esc(typeLabel(d.type))}</dd>
         <dt>규모</dt><dd>${sizeHtml(d)}</dd>
         <dt>전화</dt><dd class="mono">${telHtml(d)}</dd>
         <dt>주소</dt><dd>${esc(fullAddr(d))}${fl ? ` <span class="floor">${fl}</span>` : ""}${d.geo === "road" ? `<br><span class="hint">원본에 좌표가 없어 지도 위치는 도로 기준 대략입니다</span>` : ""}</dd>
@@ -613,7 +616,7 @@ function popupHtml(rows) {
     <div class="shops">${rows.map((d) => {
       const fl = floorOf(d).label;
       return `<div class="shop${d.id === activeId ? " active" : ""}" data-id="${esc(d.id)}">
-        <div class="top"><b>${esc(d.name)}</b>${fl ? `<span class="floor">${fl}</span>` : ""}<span class="hint">${esc(d.type)}</span></div>
+        <div class="top"><b>${esc(d.name)}</b>${fl ? `<span class="floor">${fl}</span>` : ""}<span class="hint">${esc(typeLabel(d.type))}</span></div>
         <div class="hint">${sizeOf(d) ? `<span title="${sizeOf(d).hint}">${sizeOf(d).text}</span> · ` : ""}${fmtTel(d.tel) ? `<a href="tel:${fmtTel(d.tel).replace(/-/g, "")}">${fmtTel(d.tel)}</a>` : "전화 미등록"}</div>
         ${isCaution(d) ? `<div>${verdictHtml(d)}</div>` : ""}
         ${reviewsHtml(d, "ext-a")}</div>`;
