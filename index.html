@@ -300,7 +300,7 @@ body.in-app header.top { top: 10px; }
 <div class="gate" id="gate" hidden>
   <div class="card" role="dialog" aria-labelledby="gateTitle">
     <div class="head"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--brand)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg>
-      <div><b id="gateTitle">밥도장</b><span>과제비 사용 가능 식당</span></div></div>
+      <div><b id="gateTitle">SafeDinner</b><span>과제비 사용 가능 식당</span></div></div>
     <a class="go primary" id="gateApk" href="#">앱 설치하기 (안드로이드)</a>
     <p class="note" id="gateApkNote">설치 후 「열기」를 누르면 바로 실행돼요. 처음이면 「출처를 알 수 없는 앱」 설치 허용이 필요할 수 있어요.</p>
     <button class="go ghost" id="gateWeb" type="button">모바일 웹으로 보기</button>
@@ -315,8 +315,8 @@ body.in-app header.top { top: 10px; }
 const OFFICE_DEFAULT = { name: "인피닉 인공지능연구소", lat: 37.51079, lng: 127.06423 };  // 영동대로96길 20 (OSM 건물 중심)
 const DATA_URL = "data/restaurants.json";
 const SITE_URL = "https://windyflower1219-design.github.io/Licensed-Restaurant/";   // 공유 링크 기준 주소
-const APK_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/releases/latest/download/babdojang.apk";
-const IN_APP = /BabdojangApp/.test(navigator.userAgent) || new URLSearchParams(location.search).has("app");
+const APK_URL = "https://github.com/windyflower1219-design/Licensed-Restaurant/releases/latest/download/safedinner.apk";
+const IN_APP = /SafeDinnerApp/.test(navigator.userAgent) || new URLSearchParams(location.search).has("app");
 const MQ = matchMedia("(max-width: 760px)");
 const isMobile = () => MQ.matches;
 
@@ -943,7 +943,7 @@ function centerAboveSheet(latlng) {
 // 목록을 아래로 스크롤하다 맨 위에서 더 내리면 패널을 내리는 대신, 목록을 쓰기 시작하면 패널을 펼친다
 $("#list").addEventListener("scroll", () => { if (isMobile() && sheetState === "peek") setSheet("half"); }, { passive: true });
 
-/* 앱(안드로이드) 뒤로가기: 처리했으면 true → 앱이 종료되지 않는다 */
+/* 앱(SafeDinner) 뒤로가기: 처리했으면 true → 앱이 종료되지 않는다 */
 window.appBack = () => {
   const openTip = [...document.querySelectorAll(".tip")].find((t) => !t.hidden);
   if (openTip) { openTip.hidden = true; return true; }
@@ -969,7 +969,7 @@ window.appBack = () => {
    화면·데이터는 사이트에서 바로 읽으니 깃에 올리면 앱에도 자동 반영된다.
    앱 껍데기(APK)를 새로 만들었을 때만, 최신 릴리스 번호가 더 크면 설치 안내를 띄운다. */
 (async () => {
-  const m = /BabdojangApp\/(\d+)/.exec(navigator.userAgent); if (!m) return;
+  const m = /SafeDinnerApp\/(\d+)/.exec(navigator.userAgent); if (!m) return;
   try {
     const r = await fetch("https://api.github.com/repos/windyflower1219-design/Licensed-Restaurant/releases/latest", { cache: "no-cache" });
     const latest = +(/(\d+)$/.exec((await r.json()).tag_name || "") || [])[1];

@@ -6,11 +6,11 @@ plugins {
 def buildNo = (System.getenv('VERSION_CODE') ?: '1') as int
 
 android {
-    namespace 'com.windyflower.babdojang'
+    namespace 'com.windyflower.safedinner'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'com.windyflower.babdojang'
+        applicationId 'com.windyflower.safedinner'
         minSdk 26
         targetSdk 34
         versionCode buildNo
