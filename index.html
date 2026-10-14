@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>과제비 사용 가능 식당</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%231d7a4f%27/%3E%3Cpath d=%27M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%2326344f%27/%3E%3Cpath d=%27M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
 <meta name="description" content="회사 근처 식당이 과제비로 써도 되는 일반음식점인지 지도에서 확인합니다. 서울 열린데이터광장 인허가 데이터 기준.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -23,6 +23,7 @@
   --warn: #e08a00;
   --off: #9aa1ad;
   --office: #2b3a55;
+  --brand: #26344f;         /* 로고 */
   --font-body: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-mono: var(--font-body);
   color-scheme: light;
@@ -31,14 +32,14 @@
   :root:not([data-theme="light"]) {
     --bg: #12151b; --panel: #1a1e26; --ink: #e8ebf0; --muted: #9aa2b1; --line: #2b313c;
     --chip: #232833; --accent: #34d399; --accent-ink: #062b1e; --ok: #34d399; --warn: #f5b041;
-    --off: #6b7280; --office: #a5b4fc; color-scheme: dark;
+    --off: #6b7280; --office: #a5b4fc; --brand: #3d4f75; color-scheme: dark;
   }
   :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) saturate(.25) brightness(.85); }
 }
 :root[data-theme="dark"] {
   --bg: #12151b; --panel: #1a1e26; --ink: #e8ebf0; --muted: #9aa2b1; --line: #2b313c;
   --chip: #232833; --accent: #34d399; --accent-ink: #062b1e; --ok: #34d399; --warn: #f5b041;
-  --off: #6b7280; --office: #a5b4fc; color-scheme: dark;
+  --off: #6b7280; --office: #a5b4fc; --brand: #3d4f75; color-scheme: dark;
 }
 :root[data-theme="dark"] .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) saturate(.25) brightness(.85); }
 * { box-sizing: border-box; }
@@ -108,7 +109,10 @@ input[type=search] { flex: 1; }
 /* 지도 팝업 */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); box-shadow: 0 8px 28px rgba(16,24,40,.16); }
 .leaflet-popup-content-wrapper { border-radius: 12px; }
-.leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+.leaflet-container a.leaflet-popup-close-button { top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; font-size: 0; color: transparent;
+  background: transparent center / 10px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 2.5l7 7M9.5 2.5l-7 7' stroke='%238a92a1' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); transition: background-color .15s; }
+.leaflet-container a.leaflet-popup-close-button:hover { background-color: var(--chip); }
+.pop h3 { padding-right: 22px; }
 .leaflet-popup-content { margin: 12px 14px; font: 13px/1.5 var(--font-body); min-width: 240px; }
 .pop h3 { margin: 0 0 4px; font-size: 15px; }
 .pop dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0; font-size: 12.5px; }
@@ -149,7 +153,7 @@ input[type=search] { flex: 1; }
 /* 회사: 건물 아이콘이 든 핀, 누르면 이름 팝업 */
 .office-pop .leaflet-popup-content { min-width: 0; margin: 7px 24px 7px 11px; }
 .office-pop .office-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
-.office-pop a.leaflet-popup-close-button { width: 20px; height: 20px; font-size: 16px; top: 3px; right: 3px; }
+.leaflet-container .office-pop a.leaflet-popup-close-button { width: 20px; height: 20px; top: 4px; right: 4px; background-size: 8px; }
 .office-pin { width: 34px; height: 42px; filter: drop-shadow(0 3px 4px rgba(16,24,40,.3)); }
 .office-pin .body { fill: var(--office); }
 
@@ -168,7 +172,7 @@ input[type=search] { flex: 1; }
 <div class="app">
   <aside class="side">
     <header class="top">
-      <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--ok)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg><h1>과제비 사용 가능 식당</h1>
+      <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--brand)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg><h1>과제비 사용 가능 식당</h1>
         <span class="tip-wrap" style="margin-left:auto">
           <button class="help-btn" type="button" data-tip="tipHelp" aria-expanded="false" aria-label="이용 안내">?</button>
           <div class="tip right" id="tipHelp" hidden>
