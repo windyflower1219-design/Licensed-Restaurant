@@ -281,7 +281,7 @@ body.in-app header.top { top: 10px; }
               <span><i style="background:var(--ok);box-shadow:0 0 0 1.5px #fff,0 0 0 2.5px rgba(16,24,40,.15)"></i>일반음식점</span>
               <span><i style="border:2px solid var(--warn);background:#fff"></i>주의업종</span>
               <span><i style="border:1.5px dashed var(--ok);background:color-mix(in srgb,var(--ok) 35%,#fff)"></i>대략 위치</span>
-              <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물</span>
+              <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>건물 내 식당 수</span>
             </div>
             <div class="hint tip-stamp" id="tipStamp" style="display:none"></div>
             <a class="hint" id="apkLink" href="#" hidden style="text-decoration:underline">안드로이드 앱 설치</a>
@@ -735,7 +735,7 @@ function render() {
       <div class="meta"><span class="nw"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:${colorOf(d.type)}"></span>${esc(typeLabel(d.type))}${sizeOf(d) ? ` · ${sizeOf(d).label}` : ""}</span>
         ${isCaution(d) ? `<span class="pill caution">과제비 주의</span>` : ""}
         ${fl ? `<span class="floor">${fl}</span>` : ""}
-        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 같은 건물 ${same}곳</span>` : ""}</div></div>`;
+        <span>${esc(bldAddr(d))}</span>${same > 1 ? `<span class="nw">· 건물 내 식당 ${same}곳</span>` : ""}</div></div>`;
   }).join("") + (rows.length > listLimit ? `<button class="more" id="more" type="button">${(rows.length - listLimit).toLocaleString()}곳 더 보기</button>` : "")
     + (rows.length === 0 ? emptyHtml(q) : "");
   $("#more")?.addEventListener("click", () => { listLimit += 300; render(); });
@@ -804,11 +804,11 @@ function popupHtml(rows, total = rows.length, key = "") {
       </dl>
       ${reviewsHtml(d, "btn")}
       <div class="acts-row"><button class="btn share" type="button" data-share="${esc(d.id)}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2M5 5l3-3 3 3M3 9v4a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9"/></svg>링크 공유</button>
-      ${total > 1 ? `<button class="linkbtn" type="button" data-showall="${esc(key)}">같은 건물 ${total}곳 모두 보기</button>` : ""}</div></div>`;
+      ${total > 1 ? `<button class="linkbtn" type="button" data-showall="${esc(key)}">건물 내 식당 ${total}곳 모두 보기</button>` : ""}</div></div>`;
   }
   const d0 = rows[0];
   return `<div class="pop">
-    <h3>같은 건물 ${rows.length}곳</h3>
+    <h3>건물 내 식당 ${rows.length}곳</h3>
     <p class="bld"><span class="nw">${esc(bldAddr(d0))}</span> · <span class="nw">${fmtDist(d0.dist)} · 도보 약 ${walkMin(d0.dist)}분</span></p>
     <div class="shops">${rows.map((d) => {
       const fl = floorOf(d).label;
