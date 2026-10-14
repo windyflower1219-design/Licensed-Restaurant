@@ -105,7 +105,12 @@ def call(key, service, start, end, retries=4):
     raise RuntimeError(f"{service} {start}-{end} 요청 실패: {last}")
 
 
-def fetch_service(key, service):
+def note(msg):
+    """Actions에서는 실행 요약 화면(Annotations)에도 보이게 남긴다."""
+    print(f"::notice::{msg}" if os.environ.get("GITHUB_ACTIONS") else msg, flush=True)
+
+
+def fetch_service(key, service, max_pass=8):
     first = call(key, service, 1, 1)
     body = first.get(service)
     if not body:
@@ -113,16 +118,25 @@ def fetch_service(key, service):
         raise RuntimeError(f"{service}: {res.get('CODE')} {res.get('MESSAGE')}")
     total = int(body.get("list_total_count", 0))
     print(f"[{service}] 전체 {total:,}건", flush=True)
-    rows = []
-    for s in range(1, total + 1, PAGE):
-        e = min(s + PAGE - 1, total)
-        data = call(key, service, s, e).get(service, {})
-        rows.extend(data.get("row", []))
-        print(f"  {e:,}/{total:,}", flush=True)
-        time.sleep(0.2)
-    if len(rows) < total * 0.98:
-        raise RuntimeError(f"{service}: {total}건 중 {len(rows)}건만 수신 — 중단")
-    return rows
+    # 페이지 순서가 요청마다 달라 페이지끼리 겹치고 일부가 빠진다(받은 줄 수는 total과 같아도
+    # 고유 관리번호는 적음). 그래서 관리번호 기준으로 모으고, 빠진 게 있으면 다시 받아 합친다.
+    by_id = {}
+    for p in range(1, max_pass + 1):
+        got, before = 0, len(by_id)
+        for s in range(1, total + 1, PAGE):
+            e = min(s + PAGE - 1, total)
+            page = call(key, service, s, e).get(service, {}).get("row", [])
+            got += len(page)
+            for r in page:
+                by_id.setdefault(pick(r, "id"), r)
+            time.sleep(0.2)
+        print(f"  {p}회차: {got:,}건 수신 → 고유 {len(by_id):,}/{total:,}", flush=True)
+        if len(by_id) >= total or (p > 1 and len(by_id) == before):
+            break  # 다 모았거나, 다시 받아도 새로 나오는 게 없음
+    note(f"{service}: 전체 {total:,}건 중 고유 {len(by_id):,}건 확보 ({p}회 수신)")
+    if len(by_id) < total * 0.98:
+        raise RuntimeError(f"{service}: {total}건 중 고유 {len(by_id)}건만 확보 — 중단")
+    return list(by_id.values())
 
 
 def convert(raw_rows, keep_closed_days):
@@ -173,7 +187,8 @@ def main():
     for svc in services:
         raw.extend(fetch_service(key, svc))
     rows, no_xy = convert(raw, keep_days)
-    print(f"변환 완료: {len(rows):,}곳 (좌표 없음/범위 밖 {no_xy:,}건 제외)")
+    n_open = sum(1 for r in rows if "폐업" not in r[3])
+    note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 좌표 없음/범위 밖 {no_xy:,}건 제외")
 
     # 안전장치: API 장애로 결과가 급감하면 기존 파일을 덮어쓰지 않는다.
     if OUT.exists():
