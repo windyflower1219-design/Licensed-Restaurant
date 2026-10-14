@@ -673,6 +673,8 @@ function countTypes() {
   $("#cautionN").textContent = caution;
 }
 
+/* 휴대폰 위 줄에 늘 보이는 업태(나머지는 ▾ 패널) */
+const MOBILE_TYPES = ["한식", "중국식", "일식", "경양식"];
 function renderTypeChips() {
   const chip = (t) => {
     const on = sel.types.has(t), n = typeCounts[t] || 0;
@@ -680,7 +682,7 @@ function renderTypeChips() {
   };
   if (isMobile()) {
     // 휴대폰: 많이 쓰는 4개만 보이고(고른 업태는 항상 앞에), 나머지는 ▾ 버튼의 패널에서
-    const top = typeOrder.slice(0, 4), extra = typeOrder.filter((t) => sel.types.has(t) && !top.includes(t));
+    const top = MOBILE_TYPES.filter((t) => typeOrder.includes(t)), extra = typeOrder.filter((t) => sel.types.has(t) && !top.includes(t));
     const open = !$("#typeMore").hidden;
     $("#typeChips").innerHTML = `<button type="button" class="chip more-btn" id="typeMoreBtn" aria-expanded="${open}" aria-label="업태 더 보기"><svg viewBox="0 0 12 12"><path d="M2 4l4 4.5L10 4z" fill="currentColor"/></svg></button>`
       + [...extra, ...top].map(chip).join("");
@@ -696,8 +698,8 @@ function filtered() {
   const r = +$("#radius").value;
   return DATA.filter((d) =>
     d.sc === "open" &&
-    // 주의 업태는 토글을 켰거나 검색했을 때만. 식사 업태는 칩 선택을 따른다.
-    (isCaution(d) ? (showCaution || q) : (!sel.types.size || sel.types.has(d.type))) &&
+    // 주의업종: 버튼을 켰거나 검색했을 때만. 업태를 하나도 안 고른 채 주의업종만 켜면 주의업종만 보여준다.
+    (isCaution(d) ? (showCaution || q) : (!(showCaution && !sel.types.size) && (!sel.types.size || sel.types.has(d.type)))) &&
     (q || !r || d.dist <= r) &&   // 검색할 때는 반경과 상관없이 강남구 전체에서 찾는다
     (!q || (d.name + " " + d.road + " " + d.jibun).toLowerCase().includes(q))
   ).sort((a, b) => a.dist - b.dist);
