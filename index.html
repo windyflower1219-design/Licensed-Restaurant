@@ -114,9 +114,14 @@ input[type=search] { flex: 1; }
 .pill.caution { color: var(--warn); font-weight: 600; }
 .floor { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); background: var(--chip); border-radius: 4px; padding: 0 5px; }
 .hint { color: var(--muted); font-size: 12px; }
-.help-btn { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 600; font-size: 13px; line-height: 1; }
+.help-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 600; font-size: 13px; line-height: 1; padding: 0; flex: none; }
+.help-btn.sm { width: 18px; height: 18px; font-size: 11px; }
 .help-btn[aria-expanded="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
-.help { display: grid; gap: 6px; padding-top: 4px; }
+/* ? 버튼 옆에 뜨는 작은 말풍선 */
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+.tip { position: absolute; top: calc(100% + 6px); z-index: 1500; width: max-content; max-width: 240px; background: var(--panel); color: var(--ink);
+       border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 12px; line-height: 1.5; display: grid; gap: 6px; }
+.tip.right { right: 0; } .tip.left { left: 0; }
 #cautionToggle[aria-pressed="false"] { color: var(--warn); }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
@@ -149,17 +154,19 @@ input[type=search] { flex: 1; }
   <aside class="side">
     <header class="top">
       <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--ok)"/><path d="M10 7v7a3 3 0 0 0 2 2.8V25h2v-8.2A3 3 0 0 0 16 14V7h-1.5v6h-1V7h-1.5v6h-1V7z M21 7c-2 1-3 3.5-3 6.5V17h2v8h2V7z" fill="#fff"/></svg><h1>과제비 사용 가능 식당</h1>
-        <button class="help-btn" id="helpBtn" type="button" aria-expanded="false" aria-controls="help" title="이용 안내">?</button></div>
+        <span class="tip-wrap" style="margin-left:auto">
+          <button class="help-btn" type="button" data-tip="tipHelp" aria-expanded="false" aria-label="이용 안내">?</button>
+          <div class="tip right" id="tipHelp" hidden>
+            <div>구청 인허가상 <b>영업 중인 일반음식점</b>만 표시해요. 최종 판단은 회사 규정을 따르세요.</div>
+            <div class="legend" aria-label="범례">
+              <span><i style="background:var(--ok)"></i>일반음식점</span>
+              <span><i style="border:2.5px solid var(--warn);background:#fff"></i>주점 등 주의</span>
+              <span><i style="border:1.5px dashed var(--ink);background:#fff"></i>대략 위치</span>
+              <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물</span>
+            </div>
+          </div>
+        </span></div>
       <div class="stamp-line" id="stamp">데이터 불러오는 중…</div>
-      <div class="help" id="help" hidden>
-      <div class="hint">구청에 <b>일반음식점</b>으로 등록돼 영업 중인 곳만 나옵니다. 지도에 없으면 일반음식점이 아닐 수 있어요. 호프·소주방 같은 주점성 업종은 기본으로 숨기고, 검색하면 경고와 함께 보여줍니다. 업태를 고르면 고른 업태끼리 색으로 구분됩니다. 리뷰·메뉴는 가게마다 있는 카카오맵·네이버지도·구글지도 버튼으로 확인하세요. 판단 기준은 구청 인허가 정보라서, 최종 사용 가능 여부는 회사 과제비 규정을 따르세요.</div>
-      <div class="legend" aria-label="범례">
-        <span><i style="background:var(--ok)"></i>일반음식점</span>
-        <span><i style="border:2.5px solid var(--warn);background:#fff"></i>주점 등 주의</span>
-        <span><i style="border:1.5px dashed var(--ink);background:#fff"></i>대략 위치</span>
-        <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>같은 건물 여러 곳</span>
-      </div>
-      </div>
     </header>
 
     <section class="filters" id="filters" hidden>
@@ -179,13 +186,17 @@ input[type=search] { flex: 1; }
       </div>
       <div style="display:grid;gap:6px">
         <div class="row" style="justify-content:space-between">
-          <span class="label">업태 <span style="text-transform:none;letter-spacing:0;font-weight:400">· 고르면 색으로 구분</span></span>
+          <span class="label">업태</span>
           <button class="linkbtn" id="typeNone" type="button" hidden>선택 해제</button>
         </div>
         <div class="chips" id="typeChips"></div>
       </div>
       <div class="row">
-        <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종도 보기 <span class="n" id="cautionN"></span></button>
+        <span class="tip-wrap">
+          <button class="chip" id="cautionToggle" type="button" aria-pressed="false">주점 등 주의업종도 보기 <span class="n" id="cautionN"></span></button>
+          <button class="help-btn sm" type="button" data-tip="tipCaution" aria-expanded="false" aria-label="주의업종 설명">?</button>
+          <div class="tip left" id="tipCaution" hidden></div>
+        </span>
       </div>
     </section>
 
@@ -438,8 +449,8 @@ function start() {
 
   const cc = {}; for (const d of base) if (isCaution(d)) cc[d.type] = (cc[d.type] || 0) + 1;
   $("#cautionN").textContent = Object.values(cc).reduce((a, b) => a + b, 0);
-  $("#cautionToggle").title = `과제비로 쓰기 곤란한 주점성 업태 — 눌러서 지도에 같이 보기
-${[...CAUTION_TYPES].map((t) => `${t} ${cc[t] || 0}곳`).join(", ")}`;
+  $("#tipCaution").innerHTML = `<div>일반음식점이지만 사실상 <b>주점</b>이라 과제비로 쓰기 곤란한 업태예요. 평소엔 숨기고, 검색하면 경고와 함께 나와요.</div>`
+    + `<div class="hint">${[...CAUTION_TYPES].map((t) => `${esc(t)} ${cc[t] || 0}`).join(" · ")}</div>`;
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
 
   $("#radius").value = String(store.get("radius", 500));
@@ -623,8 +634,14 @@ function openItem(id) {
 }
 
 $("#typeNone").addEventListener("click", () => { sel.types.clear(); store.set("types", []); renderTypeChips(); render(); });
-$("#helpBtn").addEventListener("click", () => {
-  const open = $("#help").hidden; $("#help").hidden = !open; $("#helpBtn").setAttribute("aria-expanded", open);
+/* ? 말풍선: 누르면 열고, 다시 누르거나 바깥을 누르면 닫는다 */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tip]");
+  document.querySelectorAll("[data-tip]").forEach((x) => {
+    const tip = document.getElementById(x.dataset.tip);
+    if (x === b) { tip.hidden = !tip.hidden; x.setAttribute("aria-expanded", !tip.hidden); }
+    else if (!tip.contains(e.target)) { tip.hidden = true; x.setAttribute("aria-expanded", "false"); }
+  });
 });
 $("#cautionToggle").addEventListener("click", () => {
   showCaution = !showCaution; store.set("showCaution", showCaution);
