@@ -223,6 +223,7 @@ body.mobile header.top .tip-wrap { order: 3; margin-left: 0 !important; }
 body.mobile #q { background: transparent; padding: 9px 4px; font-size: 15px; }
 body.mobile #q:focus { box-shadow: none; border-color: transparent; }
 body.mobile .tip-stamp { display: block !important; }
+body.mobile #csvRow { display: none !important; }   /* 원본 CSV 내려받기는 PC 웹 전용 */
 /* 검색창 아래: 지도 위에 떠 있는 버튼 한 줄 [▾][반경][업태 4개][주의업종] */
 .m-top { display: none; }
 body.mobile .m-top { display: block; position: fixed; z-index: 1090; left: 0; right: 0; top: var(--hdr-bottom-raw, 72px); }
@@ -295,6 +296,7 @@ body.in-app header.top { top: 10px; }
               <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>건물 내 식당 수</span>
             </div>
             <div class="hint tip-stamp" id="tipStamp" style="display:none"></div>
+            <div class="hint" id="csvRow" hidden><a href="#" id="csvDl" style="color:inherit;text-decoration:underline">원본 데이터(CSV) 내려받기</a> <span class="nw" style="color:var(--muted)">· PC 웹에서만 제공</span></div>
             <a class="hint" id="apkLink" href="#" hidden style="text-decoration:underline">안드로이드 앱 설치</a>
           </div>
         </span></div>
@@ -472,6 +474,7 @@ function statusClass(s) {
 /* ---------- 상태 ---------- */
 let DATA = [];        // {id,name,type,status,detail,road,jibun,tel,permit,closed,hygiene,area,lat,lng,sc}
 let META = {};
+let RAW = null;       // 원본 DB(restaurants.json의 fields/rows) — CSV 내려받기용(PC 웹 전용)
 let office = store.get("office", OFFICE_DEFAULT);
 const sel = { types: new Set(store.get("types", [])) };
 let pickingOffice = false, listLimit = 200, activeId = null;
@@ -551,6 +554,7 @@ async function loadRemote() {
     if (!res.ok) throw new Error(res.status);
     const j = await res.json();
     META = { updated: j.updated, sourceUpdated: j.source_updated, source: j.source, services: j.services };
+    RAW = { fields: j.fields, rows: j.rows };
     DATA = fromRows(j.fields, j.rows);
     if (!DATA.length) throw new Error("empty");
     start();
@@ -596,7 +600,7 @@ async function loadFile(file) {
   try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch { text = new TextDecoder("euc-kr").decode(buf); }
   text = text.replace(/^﻿/, "");
   if (/\.json$/i.test(file.name) || text.trim().startsWith("{")) {
-    const j = JSON.parse(text); META = { updated: j.updated, sourceUpdated: j.source_updated, source: j.source, services: j.services }; DATA = fromRows(j.fields, j.rows);
+    const j = JSON.parse(text); META = { updated: j.updated, sourceUpdated: j.source_updated, source: j.source, services: j.services }; RAW = { fields: j.fields, rows: j.rows }; DATA = fromRows(j.fields, j.rows);
     return start();
   }
   msg.textContent = "읽는 중… (처음 한 번 도구를 받는 중)";
@@ -626,6 +630,7 @@ async function loadFile(file) {
     });
   }
   META = { updated: `${file.name} (수동 업로드)`, source: "업로드한 CSV" };
+  RAW = null;   // 수동 업로드 CSV는 원본이 이미 사용자 손에 있으니 내려받기 링크를 숨긴다
   DATA = out; start();
 }
 $("#file").addEventListener("change", (e) => e.target.files[0] && loadFile(e.target.files[0]));
@@ -633,6 +638,26 @@ const drop = $("#drop");
 ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && loadFile(e.dataTransfer.files[0]));
+
+/* ---------- 원본 데이터 CSV 내려받기 (PC 웹 전용, ? 안내 안) ----------
+   data/restaurants.json의 rows 전체를 그대로 CSV로 바꾼다(지도의 반경·필터와 무관). */
+const CSV_LABELS = {
+  id: "관리번호", name: "사업장명", type: "업태구분명", status: "영업상태명", detail: "상세영업상태명",
+  road: "도로명주소", jibun: "지번주소", tel: "전화번호", permit: "인허가일자", closed: "폐업일자",
+  hygiene: "위생업태명", area: "시설총규모(㎡)", lat: "위도", lng: "경도", modified: "최종수정일", geo: "좌표출처",
+};
+const csvCell = (v) => { v = String(v ?? ""); return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+$("#csvDl").addEventListener("click", (e) => {
+  e.preventDefault();
+  if (!RAW) return;
+  const lines = [RAW.fields.map((f) => csvCell(CSV_LABELS[f] || f)).join(",")];
+  for (const r of RAW.rows) lines.push(r.map(csvCell).join(","));
+  const stamp = String(META.sourceUpdated || META.updated || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));   // BOM: 엑셀에서 한글이 안 깨지게
+  const a = Object.assign(document.createElement("a"), { href: url, download: `일반음식점_원본_${stamp}.csv` });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 
 /* ---------- 화면 구성 ---------- */
 function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office.lng, d.lat, d.lng); }
@@ -653,6 +678,7 @@ function start() {
 
   $("#tipCaution").textContent = "호프, 정종, 대포집, 소주방, 감성주점, 라이브카페";
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
+  $("#csvRow").hidden = !RAW;
 
   $("#radius").value = String(store.get("radius", 500));
   syncRadiusLabel();
