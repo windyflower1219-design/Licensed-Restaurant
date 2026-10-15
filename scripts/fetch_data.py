@@ -51,7 +51,8 @@ TO_WGS84 = Transformer.from_crs(EPSG5174, "EPSG:4326", always_xy=True)
 KST = dt.timezone(dt.timedelta(hours=9))
 
 # 출력 컬럼 (페이지와 약속된 순서)
-# geo: "" = 원본 좌표, "addr" = 주소로 찾은 좌표(건물 일치), "road" = 도로까지만 일치(대략 위치)
+# geo: "" = 원본 좌표, "addr" = 주소로 찾은 좌표(건물 일치), "road" = 도로까지만 일치(대략 위치),
+#      "none" = 좌표를 못 찾음(lat·lng가 null, 지도에는 안 나오고 CSV 내려받기에만 포함)
 FIELDS = ["id", "name", "type", "status", "detail", "road", "jibun", "tel",
           "permit", "closed", "hygiene", "area", "lat", "lng", "modified", "geo"]
 
@@ -229,7 +230,7 @@ def convert(raw_rows, keep_closed_days, geo_budget_min=0):
             pending.append(r)  # 좌표 없음 → 아래에서 주소로 찾기
             continue
         if not (37.3 < lat < 37.8 and 126.6 < lng < 127.4):
-            no_xy += 1
+            pending.append(r)  # 좌표가 범위 밖(원본 오류) → 주소로 다시 찾기
             continue
         out.append(make_row(r, rid, status, closed, lat, lng, ""))
 
@@ -237,6 +238,9 @@ def convert(raw_rows, keep_closed_days, geo_budget_min=0):
     closed_n = len(pending)
     pending = [r for r in pending if "폐업" not in pick(r, "status")]
     no_xy += closed_n - len(pending)
+    # 끝내 위치를 못 찾은 영업 중 가게도 좌표 없이 싣는다(geo="none"):
+    # 지도에는 안 나오지만 CSV 내려받기에는 포함돼, 영업 중 전체 건수가 원본과 맞는다.
+    unplaced = lambda r: make_row(r, pick(r, "id"), pick(r, "status"), ymd(pick(r, "closed")), None, None, "none")
     if pending and geo_budget_min:
         cache = geocode({q: 1 for r in pending for q in geo_queries(r)}, geo_budget_min)
         found = {"addr": 0, "road": 0}
@@ -244,12 +248,14 @@ def convert(raw_rows, keep_closed_days, geo_budget_min=0):
             hit = next((cache[q] for q in geo_queries(r) if cache.get(q)), None)
             if not hit:
                 no_xy += 1
+                out.append(unplaced(r))
                 continue
             found[hit[2]] += 1
             out.append(make_row(r, pick(r, "id"), pick(r, "status"), ymd(pick(r, "closed")), hit[0], hit[1], hit[2]))
         note(f"좌표 없던 {len(pending):,}곳 중 주소로 찾음: 정확 {found['addr']:,} · 대략(도로) {found['road']:,}")
     else:
         no_xy += len(pending)
+        out.extend(unplaced(r) for r in pending)
     return out, no_xy
 
 
@@ -262,7 +268,8 @@ def make_row(r, rid, status, closed, lat, lng, geo):
         rid, pick(r, "name"), pick(r, "type") or "기타", status, pick(r, "detail"),
         pick(r, "road"), pick(r, "jibun"), pick(r, "tel"),
         ymd(pick(r, "permit")), closed, pick(r, "hygiene"), area,
-        round(lat, 6), round(lng, 6), pick(r, "modified")[:10], geo,
+        round(lat, 6) if lat is not None else None, round(lng, 6) if lng is not None else None,
+        pick(r, "modified")[:10], geo,
     ]
 
 
@@ -334,7 +341,7 @@ def main():
                 raw.extend(fetch_service(key, svc))
     rows, no_xy = convert(raw, keep_days, int(os.environ.get("GEOCODE_MINUTES", "40")))
     n_open = sum(1 for r in rows if "폐업" not in r[3])
-    note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 좌표 없음/범위 밖 {no_xy:,}건 제외")
+    note(f"변환 완료: {len(rows):,}곳 (폐업 아닌 곳 {n_open:,}) · 그중 좌표를 못 찾아 지도 없이 실은 곳 {no_xy:,}건")
 
     # 안전장치: API 장애로 결과가 급감하면 기존 파일을 덮어쓰지 않는다.
     if OUT.exists():

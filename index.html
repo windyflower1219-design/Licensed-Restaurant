@@ -296,7 +296,8 @@ body.in-app header.top { top: 10px; }
               <span><span class="cnt-icon" style="display:inline-block;margin-right:4px">3</span>건물 내 식당 수</span>
             </div>
             <div class="hint tip-stamp" id="tipStamp" style="display:none"></div>
-            <div class="hint" id="csvRow" hidden><a href="#" id="csvDl" style="color:inherit;text-decoration:underline">원본 데이터(CSV) 내려받기</a> <span class="nw" style="color:var(--muted)">· PC 웹에서만 제공</span></div>
+            <div class="hint" id="csvRow" hidden><a href="#" id="csvDl" style="color:inherit;text-decoration:underline">영업 중 전체 데이터(CSV) 내려받기</a> <span class="nw" style="color:var(--muted)">· PC 웹에서만 제공</span>
+              <span style="display:block;color:var(--muted)">폐업 포함 원본 전체는 <a href="https://data.seoul.go.kr/dataList/OA-18674/S/1/datasetView.do" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">열린데이터광장</a>에서</span></div>
             <a class="hint" id="apkLink" href="#" hidden style="text-decoration:underline">안드로이드 앱 설치</a>
           </div>
         </span></div>
@@ -545,7 +546,7 @@ function fromRows(fields, rows) {
     const o = {}; for (const f of fields) o[f] = r[idx[f]];
     o.sc = statusClass(o.status || "");
     return o;
-  }).filter((o) => isFinite(o.lat) && isFinite(o.lng));
+  }).filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lng));   // 좌표를 못 찾은 행(null)은 지도·목록에서 제외(CSV 내려받기에는 포함)
 }
 
 async function loadRemote() {
@@ -639,8 +640,9 @@ const drop = $("#drop");
 ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && loadFile(e.dataTransfer.files[0]));
 
-/* ---------- 원본 데이터 CSV 내려받기 (PC 웹 전용, ? 안내 안) ----------
-   data/restaurants.json의 rows 전체를 그대로 CSV로 바꾼다(지도의 반경·필터와 무관). */
+/* ---------- 영업 중 전체 데이터 CSV 내려받기 (PC 웹 전용, ? 안내 안) ----------
+   data/restaurants.json의 rows 전체를 그대로 CSV로 바꾼다(지도의 반경·필터와 무관).
+   좌표를 못 찾아 지도에 없는 가게(geo="none", 좌표 빈칸)도 포함 — 영업 중 건수가 원본과 같다. */
 const CSV_LABELS = {
   id: "관리번호", name: "사업장명", type: "업태구분명", status: "영업상태명", detail: "상세영업상태명",
   road: "도로명주소", jibun: "지번주소", tel: "전화번호", permit: "인허가일자", closed: "폐업일자",
@@ -654,7 +656,7 @@ $("#csvDl").addEventListener("click", (e) => {
   for (const r of RAW.rows) lines.push(r.map(csvCell).join(","));
   const stamp = String(META.sourceUpdated || META.updated || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
   const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));   // BOM: 엑셀에서 한글이 안 깨지게
-  const a = Object.assign(document.createElement("a"), { href: url, download: `일반음식점_원본_${stamp}.csv` });
+  const a = Object.assign(document.createElement("a"), { href: url, download: `일반음식점_영업중_${stamp}.csv` });
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
