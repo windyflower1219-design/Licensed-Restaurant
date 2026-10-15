@@ -119,6 +119,8 @@ input[type=search] { flex: 1; }
 
 /* 지도 팝업 */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); box-shadow: 0 8px 28px rgba(16,24,40,.16); }
+.csv-ctl a { display: flex; align-items: center; justify-content: center; }
+.csv-ctl svg { width: 15px; height: 15px; }
 .leaflet-popup-content-wrapper { border-radius: 12px; }
 .leaflet-container a.leaflet-popup-close-button { top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; font-size: 0; color: transparent;
   background: transparent center / 10px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 2.5l7 7M9.5 2.5l-7 7' stroke='%238a92a1' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); transition: background-color .15s; }
@@ -269,7 +271,7 @@ body.mobile #detailBody .pop dl { font-size: 13.5px; gap: 4px 12px; }
 body.mobile #detailBody .pop .shops { max-height: none; margin: 0 -16px; }
 body.mobile #detailBody .pop .shop { padding: 10px 16px; }
 body.mobile #detailBody .reviews .btn { padding: 7px 11px; font-size: 13px; }
-body.mobile .leaflet-control-zoom { display: none; }
+body.mobile .leaflet-control-zoom, body.mobile .csv-ctl { display: none; }   /* CSV 내려받기는 PC 웹 전용 */
 body.mobile .leaflet-top { top: var(--hdr-bottom, 120px); }
 body.mobile .leaflet-bottom { display: none; }
 body.mobile .type-legend { display: none !important; }   /* 화면이 작아 범례는 생략(고른 칩에 색 점이 있음) */
@@ -640,7 +642,7 @@ const drop = $("#drop");
 ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && loadFile(e.dataTransfer.files[0]));
 
-/* ---------- 영업 중 전체 데이터 CSV 내려받기 (PC 웹 전용, ? 안내 안) ----------
+/* ---------- 영업 중 전체 데이터 CSV 내려받기 (PC 웹 전용: 줌 버튼 아래 + ? 안내 안) ----------
    data/restaurants.json의 rows 전체를 그대로 CSV로 바꾼다(지도의 반경·필터와 무관).
    좌표를 못 찾아 지도에 없는 가게(geo="none", 좌표 빈칸)도 포함 — 영업 중 건수가 원본과 같다. */
 const CSV_LABELS = {
@@ -649,8 +651,17 @@ const CSV_LABELS = {
   hygiene: "위생업태명", area: "시설총규모(㎡)", lat: "위도", lng: "경도", modified: "최종수정일", geo: "좌표출처",
 };
 const csvCell = (v) => { v = String(v ?? ""); return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
-$("#csvDl").addEventListener("click", (e) => {
-  e.preventDefault();
+$("#csvDl").addEventListener("click", (e) => { e.preventDefault(); downloadCsv(); });
+const csvCtl = L.control({ position: "topleft" });
+csvCtl.onAdd = () => {
+  const div = L.DomUtil.create("div", "leaflet-bar csv-ctl");
+  div.innerHTML = `<a href="#" id="csvBtn" role="button" title="영업 중 전체 데이터(CSV) 내려받기 · PC 웹에서만 제공" aria-label="영업 중 전체 데이터 CSV 내려받기">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v7m0 0L5 6.6M8 9.5l3-2.9M3 13h10"/></svg></a>`;
+  L.DomEvent.disableClickPropagation(div);
+  div.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); downloadCsv(); });
+  return div;
+};
+function downloadCsv() {
   if (!RAW) return;
   const lines = [RAW.fields.map((f) => csvCell(CSV_LABELS[f] || f)).join(",")];
   for (const r of RAW.rows) lines.push(r.map(csvCell).join(","));
@@ -659,7 +670,7 @@ $("#csvDl").addEventListener("click", (e) => {
   const a = Object.assign(document.createElement("a"), { href: url, download: `일반음식점_영업중_${stamp}.csv` });
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
+}
 
 /* ---------- 화면 구성 ---------- */
 function computeDist() { for (const d of DATA) d.dist = distM(office.lat, office.lng, d.lat, d.lng); }
@@ -681,6 +692,7 @@ function start() {
   $("#tipCaution").textContent = "호프, 정종, 대포집, 소주방, 감성주점, 라이브카페";
   $("#cautionToggle").setAttribute("aria-pressed", showCaution);
   $("#csvRow").hidden = !RAW;
+  if (RAW && !$("#csvBtn")) csvCtl.addTo(map); else if (!RAW && $("#csvBtn")) csvCtl.remove();   // 수동 업로드로 다시 시작하면 버튼도 내린다
 
   $("#radius").value = String(store.get("radius", 500));
   syncRadiusLabel();
